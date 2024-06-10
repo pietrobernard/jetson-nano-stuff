@@ -172,6 +172,102 @@ sudo apt upgrade
 ```
 If everything went well the system is now Ubuntu 20.04.
 
+### 4) Building and installing cuDF
 
+Rapids is officially <b>not</b> supported on this board. Official packages only support GPUs with compute capability 6+ and architectures starting with Pascal (incidentally Pascal is the successor of Maxwell). Luckily, it is possible to run it anyway on our Maxwell 5.3 GPU but it requires a full compilation from the ground up of cuDF and most of the other libraries and packages it depends on. Be forewarned that the whole process can easily take up to 1.5-2 days to complete.
+
+#### 4.1) Build Apache Arrow and pyarrow module
+
+We need version `1.0.1` exactly. So:
+```bash
+git clone https://github.com/apache/arrow.git
+cd arrow
+git checkout apache-arrow-1.0.1
+# these two env vars are not strictly necessary but are suggested
+export PARQUET_TEST_DATA="${PWD}/cpp/submodules/parquet-testing/data"
+export ARROW_TEST_DATA="${PWD}/testing/data"
+```
+Export then the following vars:
+```bash
+export ARROW_HOME=${PWD}
+export LD_LIBRARY_PATH=${PWD}/lib:$LD_LIBRARY_PATH
+```
+Now it's time to build some dependencies that Arrow needs. 
+
+##### 4.1.1) Build Boost libraries
+
+##### 4.1.2) Build orc
+
+Now we can build Arrow and pyarrow:
+```bash
+mkdir build && cd build
+
+cmake	-DCMAKE_INSTALL_PREFIX=$ARROW_HOME \
+	-DCMAKE_INSTALL_LIBDIR=lib \
+	-DARROW_FLIGHT=ON \
+	-DARROW_GANDIVA=ON \
+	-DARROW_ORC=ON \
+	-DARROW_PARQUET=ON \
+	-DARROW_PYTHON=ON \
+	-DARROW_PLASMA=ON \
+	-DARROW_CUDA=ON \
+	-DARROW_COMPUTE=ON \
+	-DARROW_CSV=ON \
+	-DARROW_FILESYSTEM=ON \
+	-DARROW_WITH_BZ2=ON \
+	-DARROW_WITH_ZLIB=ON \
+	-DARROW_WITH_ZSTD=ON \
+	-DARROW_WITH_LZ4=ON \
+	-DARROW_WITH_SNAPPY=ON \
+	-DARROW_WITH_BROTLI=ON \
+	..
+
+make -j1
+make install
+```
+In this case it is mandatory to use only one core to compile, otherwise the nano will quickly run out of memory and the CPU will stall. If this process gives out any error, it is usually due to some other missing libraries. Just install them if prompted. After the building completes, the python wheel can be created. Before we do that, we have to make sure that `cython` is of the correct version (newer versions of `cython` will wreak havoc with this and further builds):
+```
+conda install cython=0.29.37
+```
+After you've done this, proceed to build the wheel:
+```bash
+cd $ARROW_HOME/python
+export PYARROW_WITH_PARQUET=1
+export PYARROW_WITH_CUDA=1
+export PYARROW_WITH_ORC=1
+python setup.py build_ext --build_type=release --bundle-arrow-cpp bdist_wheel
+```
+When the process completes, the wheel will be inside the `$ARROW_HOME/python/dist` folder. Go to that folder and install the wheel via:
+```
+pip install wheel_name.whl
+```
+Then open python and try the following:
+```python
+from pyarrow import cuda
+```
+If it doesn't show errors, it means that pyarrow has been built correctly with CUDA support enabled.
+
+#### 4.2) Build DLPack
+
+In the following example snippet I assume that dlpack's source folder is download in `$HOME`. Also, I'd recommend to use no more than 2 cores during compilation to avoid stalling the CPU due to low memory (even with swap active).
+```
+git clone https://github.com/dlmc/dlpack.git
+cd dlpack
+mkdir install
+mkdir build && cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/dlpack/install
+make -j2
+make install
+```
+After that, go inside the `install` dir and copy the contents of `lib` to:
+```
+$CONDA_PREFIX/lib
+```
+and the contents of `include` to:
+```
+$CONDA_PREFIX/include
+```
+
+#### 4.3) 
 
 
