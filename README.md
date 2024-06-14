@@ -439,11 +439,11 @@ After the install completes, you can remove the pandas source to save space.
 
 #### 7.2) Build DLpack
 
-We will need version `0.4`.
+We will need version `0.3`.
 ```bash
 git clone https://github.com/dmlc/dlpack.git
 cd dlpack
-git checkout v0.4
+git checkout v0.3
 mkdir install
 mkdir build && cd build
 cmake -DCMAKE_INSTALL_PREFIX=${PWD}/../install ..
