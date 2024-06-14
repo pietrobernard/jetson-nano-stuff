@@ -1,4 +1,4 @@
-# jetson-nano-stuff
+# Jetson Nano 2GB devkit - Ubuntu 20.04 + GPGPU packages
 Everything to get the old Jetson Nano Developer Kit 2GB up and running with Ubuntu 20.04 and a lot of other things. This board is no longer in production as of 2024 but if you still have one (or more) of these and you want to play around with it, this document will help.
 
 Here are the details of the board.
@@ -23,7 +23,11 @@ Here are the details of the board.
 
 Official docs are available [here](https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-2gb-devkit).
 
-This document describes how to create a bootable SD card image, update to Ubuntu 20.04 and install some libraries to exploit gpu computing both in python (e.g. numba, cupy, cudf) and c++ tool (nvcc, ecc). Also, directions to use distributed computing tools (dask, kafka) will be given.
+This document describes how to create a bootable SD card image, update to Ubuntu 20.04 and install some libraries to exploit gpgpu computing both in python (e.g. numba, cupy, cudf) and c++ tool (nvcc, ecc). Also, directions to use distributed computing tools (dask, kafka) will be given. Specifically:
++ numba 0.56.4
++ cupy
++ pyarrow 1.0.1
++ cudf 0.19.0
 
 ### 1) Intro - The board, drivers, CUDA and Ubuntu
 
@@ -35,239 +39,479 @@ The only drivers that will work are those provided by nVidia in their "Linux 4 T
 3. With respect to the OS, nvidia officially supports only Ubuntu 18. While it is not necessary, it can be updated to Ubuntu 20.04 so as to obtain updated versions of some system libraries that are quite useful for a variety of tasks. The procedure to update the os is described later.
 
 ### 2) Creating a bootable SD card and first boot
+#### 2.1) Using Nvidia's sdkmanager (requires user registration)
 
-The ideal minimum would be a <b>64 GB</b> card, class 10, so that you can enjoy better performance from the system. A 32 GB could work too but you'd only have a little more of 1 GB of usable space and this would not allow to allocate enough space for a swap file. The 2 GB of onboard memory + the default 1 GB swap is enough for most task but the memory gets quickly eaten away if you have to compile libraries and you'll need at least another 8 GB of swap file (assuming of course you use only 1 core during the compilation).
+The easiest way to do this is to set up a virtual machine (e.g. VMware) with Ubuntu 18. Once you have it up and running, install the `sdkmanager` by Nvidia. While this wouldn't be necessary, since you can also download all that is needed to build the sd-card image from Nvidia website, it is highly recommended because the sdkmanager will download some additional dependencies that will prevent the system from breaking when updating from Ubuntu 18 to Ubuntu 20.04. After you've installed sdkmanager, run it choosing the correct board and JetPack version (`4.6.4`). You can check only the `Jetson OS` options and uncheck the others. This will build the image, but we'll need to modify some things about it manually. When prompted to flash the device, hit `Skip`.
 
-1. Do a <b>low level format</b> of the sd card, without a filesystem. This is important, otherwise the system won't boot or, in case it does, it could be unstable.
+Open a terminal inside Nvidia's sdk folder and look for the `Linux_for_Tegra` folder. Once there, go inside `tools` and run these scripts:
+1. Create a user:
+   ```bash
+   sudo ./l4t_create_default_user.sh -u jetson -p jetson -n jetson --accept-license --autologin
+   ```
+2. Create the bootable image:
+   ```bash
+   sudo ./jetson-image-disk-creator.sh -o sd-blob.img -b jetson-nano-2gb-devkit
+   ```
+Once you've done this, you can use a tool like `balena etcher` to write `sd-blob.img` to SD card:
+1. <b>Before you flash the card</b>: do a low level format, without partitioning (easy via tools like `Disks` on Ubuntu). This is absolutely mandatory otherwise the system won't boot correctly.
+2. Flash the image on the card.
+3. Place the card in the Jetson and power it up. The first boot will show some errors, ignore them. It will reboot automatically.
 
-2. Go [here](https://developer.nvidia.com/embedded/linux-tegra-r3274) and download:
-   1. The [driver package (BSP)](https://developer.nvidia.com/downloads/embedded/l4t/r32_release_v7.4/t210/jetson-210_linux_r32.7.4_aarch64.tbz2) which is actually the Linux 4 Tegra.
-   2. The [sample root filesystem](https://developer.nvidia.com/downloads/embedded/l4t/r32_release_v7.4/t210/tegra_linux_sample-root-filesystem_r32.7.4_aarch64.tbz2) which is Ubuntu 18.
+#### 2.2) Manual download of components (no user registration required)
 
-3. Prepare a virtual machine (like VMware or Virtualbox) or a docker container with Ubuntu 18, and transfer the file you downloaded there (or directly download them from the vm/docker itself).
+1. Go [here](https://developer.nvidia.com/embedded/linux-tegra-r3274) and download the [Driver Package (BSP)](https://developer.nvidia.com/downloads/embedded/l4t/r32_release_v7.4/t210/jetson-210_linux_r32.7.4_aarch64.tbz2) and the [Sample Root Filesystem](https://developer.nvidia.com/downloads/embedded/l4t/r32_release_v7.4/t210/tegra_linux_sample-root-filesystem_r32.7.4_aarch64.tbz2).
 
-4. Unpack the driver package's tar.
+2. Untar the `Driver Package` with the following:
+   ```bash
+	sudo tar -xpf <filename>.tbz2
+   ```
+   it is <b>extremely</b> important to untar as sudo and to use the `-xpf` flags. Otherwise, permissions will be screwed up and the subsequent actions won't work. This will create a folder named `Linux_for_Tegra`.
 
-5. Unpack the sample root filesystem's tar and copy its content over to the "rootfs" folder in `Linux_for_Tegra/rootfs`
+3. Move the `Sample Root Filesystem`'s tar inside `Linux_for_Tegra/rootfs` and untar it there:
+   ```bash
+	sudo tar -xpf <filename>.tbz2
+   ```
 
-6. Go in `Linux_for_Tegra` and execute script `apply_binaries.sh`. It is <b>extremely</b> important to do this <b>only once</b>! Doing it more than once will corrupt the image. This script will configure the rootfs with the L4T kernel and nvidia drivers.
+4. Go inside the `Linux_for_Tegra` directory and launch, as sudo, the `apply_binaries.sh` script. <b>Do it ONLY ONCE</b> otherwise the image will be corrupted!
 
-7. Go in `Linux_for_Tegra/tools` directory and run `l4t_create_default_user.sh` with the following arguments:
-   * --username : the username (e.g. jetson)
-   * --password : the password (e.g. jetson)
-   * --autologin : to enable autologin without waiting for user input at boot time
-   * --hostname : the name of the device (e.g. jetson)
-   * --accept-license : to pre-accept the EULA license (extremely useful since it will make the system to boot immediately).
-   so for instance:
-  ```./l4t_create_default_user.sh --username jetson --password jetson --hostname jetson --autologin --accept-license```
+5. Go inside the `Linux_for_Tegra/tools` directory and run, as sudo, the `l4t_create_default_user.sh` script with the followings args:
+   ```bash
+	-u : specifies the user name (e.g. jetson)
+   	-p : specifies the password (e.g. jetson)
+   	-n : specifies the host name (e.g. jetson)
+   	--accept-license : already accepts the license so that the system is ready to go
+   	--autologin : if you want the system to autologin
+   ```
 
-8. Run `./jetson-disk-image-creator.sh` with the following arguments:
-   * -o : the output's sd card image filename (must end with '.img')
-   * -b : the board name (must be exactly `jetson-nano-2gb-devkit`)
-   * do not use the "-r" option for the revision since it is automatically determined in the case of the nano-2gb-devkit.
+6. Build the image by running, as sudo, script `jetson-disk-image-creator.sh` with the options:
+   ```bash
+	-o : output file (must end with .img extension)
+   	-b : must be exactly jetson-nano-2gb-devkit
+   ```
+After this, you can place the card in the jetson and boot.
 
-9. The image is now ready. Insert the sd card in a card reader and flash the image on the sd card that was prepared before using [balena etcher](https://etcher.balena.io/) or a similar program.
+### 3) Prepare system for update
 
-10. When flashing is complete, open a program like gparted. You'll see that the sd card will have a lot of partitions. Go and look for the one named "APP" and resize it, enlarging it to occupy all the remaining available space.
-
-11. Insert the sd card in the jetson's slot and power it on, it will boot. Please notice that first boot could take a while and I'd recommend to hook up an hdmi display to catch all the output easily or, in case you have it, a serial debugger on the RX/TX ports.
-
-12. The system will be accessible by ssh directly using as `hostname` the one that was set before during the execution of the `l4t_create_default_user.sh` script. Otherwise, you could just connect a USB keyboard and a monitor.
-
-#### 2.1) Alternative way
-
-If you prefer, you can download [nvidia's sdkmanager](https://developer.nvidia.com/sdk-manager) inside the virtual machine. Please notice that in this case <b>virtualbox will not work</b>. If you don't want to use docker, then you'll have to use VMware. After you install the sdk-manager, proceed as follows:
-
-1. Format the sd card as said above and then insert it into the jetson's slot.
-2. Put the jetson in forced recovery mode by shorting pin `FC REC` to ground, then connect the board to you computer via the micro USB port.
-3. Power up the jetson by connecting the USB-C connector to the power supply and, if prompted by the virtual machine, connect the USB device to it.
-4. Open the sdk-manager, it will detect the board. Use the menus to download the latest supported jetpack (4.6.4).
-5. Choose a suitable download directory for the packages but also choose the options so as to not to flash the device.
-6. After the program finishes downloading, close the sdk-manager and navigate to the download dirs. You should find a folder that is called `Linux_for_Tegra` as above. At that  point proceed as points 6 and 7 above.
-7. After point 7 is completed, instead of building the image, use the script `nvsdkmanager_flash.sh` which is inside the `Linux_for_Tegra/tools` directory. Run it first with `-h` or `--help` argument so as to get a list of options that are self-explanatory.
-8. The script will attempt to access the SD card inside the jetson's slot and flash it with the system image directly. Please notice that, at least on this version of the nano, this procedure could hang and fail. If you see that the prompt is not responsive for a lot of time (like an hour or so) then the script has failed. In this case, power down the board by removing the USB-C connector and power it up again. Then give it another try at point 7.
-9. The script might fail several times but in the end, if it succeeds, the board will be ready to go.
-
-### 3) Preparing Ubuntu 18 to Ubuntu 20.04 update
-
-#### 3.1) Initial steps
-The system you have now is very basic and it still needs some packages. First thing to do is of course to open a terminal and do:
-```
+First thing to do, as usual:
+```bash
 sudo apt update
 sudo apt upgrade
 ```
-After that, it is necessary to install the following:
+Remove chromium browser:
+```bash
+sudo apt --purge remove chromium-browser
+```
 
-1. Install all of the L4T packages (the JetPack):
-   ```
-   sudo apt install nvidia-l4t-*
-   ```
-   this will also install CUDA.
+#### 3.1) Install JetPack 4.6.4
+```bash
+sudo apt install nvidia-jetpack
+```
+The jetpack also installs all of the remaining `nvidia-l4t` packages that are needed. Edit the `.bashrc` file and add these lines at the end:
+```bash
+export CUDA_HOME=/usr/local/cuda
+export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+```
 
-2. Edit the `.bashrc` file so as to include the path and library path to CUDA, and also the `$CUDA_HOME` variable that will come in handy later. So:
-   ```
-   export PATH=/usr/local/cuda/bin:$PATH
-   export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-   export CUDA_HOME=/usr/local/cuda
-   ```
+#### 3.2) Disable the graphical user interface
+```bash
+sudo systemctl set-default multi-user.target
+```
+and reboot the board.
 
-3. Install the `miniforge` package manager. It is a very lightweight alternative to anaconda and miniconda. Besides, anaconda and miniconda don't work on the Jetson because the ARM v8 processor lacks some instructions that are needed by them. Conversely, miniforge works like a charm. Miniforge can be git-pulled from https://github.com/conda-forge/miniforge .
+#### 3.3) Unlock the release advancement option
 
-4. Create a conda environment with ```python3.9``` since it is the most compatible version with all the libraries and packages that will be installed later. Activate the environment when done.
+Edit the file at `/etc/update-manager/release-upgrades`, changing the last line to `Prompt=lts`.
 
-5. Install the `jtop` utility. It is like htop but it also shows gpu utilization and will be useful later. It is the counterpart for the Tegra SoC of the `nvidia-smi` tool that nvidia ships with discrete gpu drivers. It is installed via pip. So:
-   ```
-   sudo pip install -U jetson-stats
-   ```
+### 4) Upgrade
 
-6. Install the `numba` package with gpu support. The last version to support CUDA 10.2 is the 0.56.4, so:
-   ```
-   conda install numba=0.56.4
-   ```
-   It will work out of the box. To test it just open python and run the following:
-   ```python
-   from numba import cuda
-   # this should display "True"
-   cuda.is_available()
-   # this will show the details of the jetson's gpu
-   cuda.detect()
-   ```
-   The output will be something along:
-   ```
-   Found 1 CUDA devices
-   id 0      b'NVIDIA Tegra X1'                              [SUPPORTED]
+<hr>
+<b>Warning</b>: if you used the second method to build the sd-card image, before you proceed you must edit the `/etc/apt/apt.conf.d/01autoremove` file adding these lines:
+
+```bash
+	"libnvidia-container-tools";
+	"libnvidia-container0";
+	"libnvidia-container1";
+	"nvidia-container";
+	"nvidia-container-csv-cuda";
+	"nvidia-container-csv-cudnn";
+	"nvidia-container-csv-tensorrt";
+	"nvidia-container-csv-visionworks";
+	"nvidia-container-runtime";
+	"nvidia-container-toolkit";
+	"nvidia-cuda";
+	"nvidia-cudnn8";
+	"nvidia-docker2";
+	"nvidia-jetpack";
+	"nvidia-l4t-3d-core";
+	"nvidia-l4t-apt-source";
+	"nvidia-l4t-bootloader";
+	"nvidia-l4t-camera";
+	"nvidia-l4t-configs";
+	"nvidia-l4t-core";
+	"nvidia-l4t-cuda";
+	"nvidia-l4t-firmware";
+	"nvidia-l4t-gputools";
+	"nvidia-l4t-graphics-demos";
+	"nvidia-l4t-gstreamer";
+	"nvidia-l4t-init";
+	"nvidia-l4t-initrd";
+	"nvidia-l4t-jetson-io";
+	"nvidia-l4t-jetson-multimedia-api";
+	"nvidia-l4t-kernel";
+	"nvidia-l4t-kernel-dtbs";
+	"nvidia-l4t-kernel-headers";
+	"nvidia-l4t-libvulkan";
+	"nvidia-l4t-multimedia";
+	"nvidia-l4t-multimedia-utils";
+	"nvidia-l4t-oem-config";
+	"nvidia-l4t-tools";
+	"nvidia-l4t-wayland";
+	"nvidia-l4t-weston";
+	"nvidia-l4t-x11";
+	"nvidia-l4t-xusb-firmware";
+	"nvidia-nsight-sys";
+	"nvidia-opencv";
+	"nvidia-tensorrt";
+	"nvidia-visionworks";
+	"nvidia-vpi";
+	"libdrm-tegra0";
+	"nsight-systems-linux-tegra-public-2021.5.4.19-e642d4b";
+```
+to both the `NeverAutoRemove` and `Never-MarkAuto-Sections`. This will prevent the updater from removing these packages (it will otherwise cause a kernel panic and break the system on reboot).
+
+<hr>
+
+To launch the upgrade, it is best to connect a keyboard to the Jetson and an HDMI monitor. Then launch the hideous command:
+```bash
+sudo do-release-upgrade
+```
+
+During the procedure you might be prompted about what to do with several configuration files. Just go for the default option. <b>At the end, it should ask you whether you want to remove obsolete software. Do not remove it (just type enter) otherwise some of Nvidia's proprietary stuff will get deleted and the system will break</b>. Once the system reboots (hopefully), you'll have to repair some broken packages. Try:
+```bash
+sudo apt update
+```
+If it fails, then:
+```bash
+sudo dpkg --configure -a
+```
+should do the trick.
+
+### 5) Installing software
+#### 5.1) Install htop and pip
+```bash
+sudo apt install htop
+sudo apt install python3-pip
+```
+
+#### 5.2) Installing Miniforge package manager
+
+Since the CPU's architecture is too old to run Anaconda or Miniconda, the other option is miniforge3. You can get it from here and install it via the script:
+```bash
+wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh
+```
+Then, create a new environment, I called it `gpudist`, with `python3.9`:
+```bash
+conda create --name=gpudist python=3.9
+```
+
+#### 5.3) Install `jetson-stats` and `jtop`
+Install now the `jetson-stats` pip package from the `base` environment:
+```
+sudo pip3 install -U jetson-stats
+```
+and reboot the board. Then activate the `gpudist` env and run:
+```
+pip3 install jetson-stats
+```
+this will install the `jtop` python's module that will be useful later.
+
+#### 5.4) Install `numba` and `cupy` with GPU support
+
+To install numba, we'll have to get the higher version that supports CUDA 10.2 that is the 0.56.4. So:
+```bash
+conda install numba=0.56.4
+```
+and then test it opening a python session:
+```bash
+from numba import cuda
+cuda.is_available()
+cuda.detect()
+```
+this should look like:
+```bash
+Python 3.9.19 | packaged by conda-forge | (main, Mar 20 2024, 13:51:08) 
+[GCC 12.3.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from numba import cuda
+>>> cuda.is_available()
+True
+>>> cuda.detect()
+Found 1 CUDA devices
+id 0      b'NVIDIA Tegra X1'                              [SUPPORTED]
                       Compute Capability: 5.3
                            PCI Device ID: 0
                               PCI Bus ID: 0
                                     UUID: GPU-a220528a-4ef6-34d2-ac51-72ebc267ecf9
                                 Watchdog: Enabled
              FP32/FP64 Performance Ratio: 32
-   Summary:
+Summary:
 	1/1 devices are supported
-   ```
-
-7. Install the `cupy` package with gpu support. This is done via pip and the specific version that supports CUDA 10.2 is obtained by launching:
-   ```
-   pip install cupy-cuda102
-   ```
-
-#### 3.2) Disabling graphical interface and update
-
-This step is necessary during the 18 to 20.04 update, otherwise the process could break the update and the sd card would have to be flashed again.
+True
+>>> 
 ```
-sudo systemctl set default multi-user.target
+Now it's time for `cupy` with GPU support. It is quite easy:
+```bash
+pip install cupy-cuda102
 ```
-Now, via ssh, edit the file at `/etc/update-manager/release-upgrades` with sudo and change the last line from `Prompt=never` to `Prompt=lts`. At this point all is ready for the release upgrade, so:
+To test it open a python session and:
+```bash
+from cupy import cuda
 ```
-sudo do-release-upgrade
-```
-It will take time. After the procedure completes, reboot the board. It is possible that some errors will be shown during the boot procedure. If everything went well you should be able to login again via ssh or open up a terminal with `CTRL+ALT+F1` from a jetson-attached usb keyboard.
+if it doesn't show errors, then it works.
 
-#### 3.3) Reparing broken packages
+### 6) Building Arrow
+#### 6.1) Prerequisites
 
-Some packages could have been broken during the update, so: `sudo dpkg --configure -a` will do the trick. After that, run:
-```
-sudo apt update
-sudo apt upgrade
-```
-If everything went well the system is now Ubuntu 20.04.
-
-### 4) Building and installing cuDF
-
-Rapids is officially <b>not</b> supported on this board. Official packages only support GPUs with compute capability 6+ and architectures starting with Pascal (incidentally Pascal is the successor of Maxwell). Luckily, it is possible to run it anyway on our Maxwell 5.3 GPU but it requires a full compilation from the ground up of cuDF and most of the other libraries and packages it depends on. Be forewarned that the whole process can easily take up to 1.5-2 days to complete.
-
-#### 4.1) Build Apache Arrow and pyarrow module
-
-We need version `1.0.1` exactly. So:
+Install `ninja-build` via apt. Then, clone `Arrow` repo via git and checkout version `1.0.1`:
 ```bash
 git clone https://github.com/apache/arrow.git
 cd arrow
 git checkout apache-arrow-1.0.1
-# these two env vars are not strictly necessary but are suggested
-export PARQUET_TEST_DATA="${PWD}/cpp/submodules/parquet-testing/data"
-export ARROW_TEST_DATA="${PWD}/testing/data"
 ```
-Export then the following vars:
+Go inside the `arrow` folder, and create the `dist` folder. Edit the `.bashrc` file and add, assuming arrow is in $HOME:
 ```bash
-export ARROW_HOME=${PWD}
-export LD_LIBRARY_PATH=${PWD}/lib:$LD_LIBRARY_PATH
+export ARROW_HOME=${HOME}/arrow/dist
+export LD_LIBRARY_PATH=${HOME}/arrow/dist/lib:$LD_LIBRARY_PATH
 ```
-Now it's time to build some dependencies that Arrow needs. 
+reload the `.bashrc` so that these vars will be exported.
 
-##### 4.1.1) Build Boost libraries
+#### 6.2) Download and build Boost libraries
 
-##### 4.1.2) Build orc
-
-Now we can build Arrow and pyarrow:
+We need boost version 1.71.0 which can be downloaded directly:
 ```bash
-mkdir build && cd build
+wget https://archives.boost.io/release/1.71.0/source/boost_1_71_0.tar.gz
+```
+go inside `boost_1_71_0` folder and run the bootstrap script:
+```bash
+./bootstrap
+```
+this will build the `b2` program. Start the build via:
+```bash
+./b2 -j4
+```
+at this point, assuming you've got the boost libs in `$HOME/boost_1_71_0`, you'll have the include path in `$HOME/boost_1_71_0` (folder `boost`) and the lib path in `$HOME/boost_1_71_0/stage/lib`. We can thus add to the bashrc the following lines:
+```bash
+export LD_LIBRARY_PATH=/path/to/boost/boost_1_71_0:$LD_LIBRARY_PATH
+export BOOST_ROOT=/path/to/boost/boost_1_71_0
+export BOOST_INCLUDEDIR=/home/jetson/boost_1_71_0/boost
+export BOOST_LIBRARYDIR=/home/jetson/boost_1_71_0/stage/lib
+```
+these vars will be used in the following to build Arrow. Also, create two links:
+```
+ln -s ${BOOST_ROOT}/boost ${BOOST_ROOT}/include
+ln -s ${BOOST_ROOT}/boost/stage/lib ${BOOST_ROOT}/lib
+```
+these will be useful since some packages like to find boost libs at those locations.
 
-cmake	-DCMAKE_INSTALL_PREFIX=$ARROW_HOME \
-	-DCMAKE_INSTALL_LIBDIR=lib \
-	-DARROW_FLIGHT=ON \
-	-DARROW_GANDIVA=ON \
+#### 6.3) Configure cmake for Arrow
+Now go to `${ARROW_HOME}/cpp/thirdparty`. You'll see a file named `versions.txt`. Open it and in the `DEPENDENCIES` section below, delete the entry corresponding to `boost`, since we've already installed it. Also, in the line corresponding to `c-ares`, substitute the link with this static one: `https://github.com/c-ares/c-ares/releases/download/cares-1_16_1/c-ares-1.16.1.tar.gz`. Save the file and run the `donwload_dependencies.sh` script.
+
+Proceed to build and install `thrift` manually, since it fails in the automated procedure. Go in `${ARROW_HOME}/cpp/thirdparty` and untar the `thrift` tarball. Then go inside its folder and run the `bootstrap.sh` script. After that, configure with:
+```bash
+mkdir install
+./configure CPPFLAGS="-I${BOOST_ROOT}" --prefix=${PWD}/install
+make -j4
+make install
+```
+At this point just move the contents of the `install` dir over to the `${CONDA_PREFIX}`. Edit the `versions.txt` file again and remove the line corresponding to `thrift` in the `DEPENDENCIES` section.
+
+Now, go back in the `cpp` folder and create a `build` dir, go inside that and type:
+```bash
+cmake	-DCMAKE_INSTALL_PREFIX=${ARROW_HOME} \
+	-DCMAKE_CXX_FLAGS="-I${CONDA_PREFIX}/include" \
+	-DARROW_COMPUTE=ON \
+	-DARROW_CSV=ON \
+	-DARROW_CUDA=ON \
+	-DARROW_FILESYSTEM=ON \
 	-DARROW_ORC=ON \
 	-DARROW_PARQUET=ON \
 	-DARROW_PYTHON=ON \
-	-DARROW_PLASMA=ON \
-	-DARROW_CUDA=ON \
-	-DARROW_COMPUTE=ON \
-	-DARROW_CSV=ON \
-	-DARROW_FILESYSTEM=ON \
-	-DARROW_WITH_BZ2=ON \
-	-DARROW_WITH_ZLIB=ON \
-	-DARROW_WITH_ZSTD=ON \
-	-DARROW_WITH_LZ4=ON \
-	-DARROW_WITH_SNAPPY=ON \
-	-DARROW_WITH_BROTLI=ON \
+	-DARROW_DATASET=ON \
+	-DARROW_HDFS=ON \
+	-DARROW_JSON=ON \
+	-DARROW_BUILD_BENCHMARKS=OFF \
+	-DARROW_BUILD_EXAMPLES=OFF \
+	-DARROW_BUILD_TESTS=OFF \
+	-Dabsl_SOURCE=BUNDLED \
+	-DAWSSDK_SOURCE=BUNDLED \
+	-Dbenchmark_SOURCE=BUNDLED \
+	-DBoost_SOURCE=SYSTEM \
+	-DBrotli_SOURCE=BUNDLED \
+	-DBZip2_SOURCE=BUNDLED \
+	-Dc-ares_SOURCE=BUNDLED \
+	-Dgflags_SOURCE=BUNDLED \
+	-Dglog_SOURCE=BUNDLED \
+	-Dgoogle_cloud_cpp_storage_SOURCE=BUNDLED \
+	-DgRPC_SOURCE=BUNDLED \
+	-DGTest_SOURCE=BUNDLED \
+	-Djemalloc_SOURCE=BUNDLED \
+	-DLLVM_SOURCE=BUNDLED \
+	-DLz4_SOURCE=BUNDLED \
+	-Dnlohmann_json_SOURCE=BUNDLED \
+	-Dopentelemetry-cpp_SOURCE=BUNDLED \
+	-DORC_SOURCE=BUNDLED \
+	-Dre2_SOURCE=BUNDLED \
+	-DProtobuf_SOURCE=BUNDLED \
+	-DRapidJSON_SOURCE=BUNDLED \
+	-DSnappy_SOURCE=BUNDLED \
+	-DSubstrait_SOURCE=BUNDLED \
+	-DThrift_SOURCE=SYSTEM \
+	-Ducx_SOURCE=BUNDLED \
+	-Dutf8proc_SOURCE=BUNDLED \
+	-Dxsimd_SOURCE=BUNDLED \
+	-DZLIB_SOURCE=BUNDLED \
+	-DZSTD_SOURCE=BUNDLED \
+	-DBoost_ROOT=${BOOST_ROOT} \
+	-DTHRIFT_STATIC_LIB=${CONDA_PREFIX}/lib \
 	..
-
-make -j1
+```
+cmake could produce some warning due to some variables not being used. Don't worry about them. Before going on and making arrow, go in the `src/parquet/CMakeFiles/parquet_shared.dir` folder and inside. Suppose that your conda environment is named like mine `gpudist`. Seach in those files for entries like `gpudist/lib` and delete the lines/arguments to command where they occurr. After that, proceed with the build:
+```bash
+make -j4
 make install
 ```
-In this case it is mandatory to use only one core to compile, otherwise the nano will quickly run out of memory and the CPU will stall. If this process gives out any error, it is usually due to some other missing libraries. Just install them if prompted. After the building completes, the python wheel can be created. Before we do that, we have to make sure that `cython` is of the correct version (newer versions of `cython` will wreak havoc with this and further builds):
-```
-conda install cython=0.29.37
-```
-After you've done this, proceed to build the wheel:
+Go inside the `install` dir and move the things to the appropriate folders in the `${CONDA_PREFIX}`. Create these static links inside the `${ARROW_HOME}` folder:
 ```bash
-cd $ARROW_HOME/python
-export PYARROW_WITH_PARQUET=1
+ln -s /your/path/to/conda/env/include include
+ln -s /your/path/to/conda/env/lib lib
+```
+After that, go in the `arrow/python` folder. Set this env vars:
+```bash
 export PYARROW_WITH_CUDA=1
+export PYARROW_WITH_PARQUET=1
 export PYARROW_WITH_ORC=1
-python setup.py build_ext --build_type=release --bundle-arrow-cpp bdist_wheel
 ```
-When the process completes, the wheel will be inside the `$ARROW_HOME/python/dist` folder. Go to that folder and install the wheel via:
+Install `cython` version `0.29`. This is very important since newer versions won't work.
 ```
-pip install wheel_name.whl
+conda install cython=0.29
 ```
-Then open python and try the following:
-```python
+Now, edit the `SetupCxxFlags.cmake` script inside `python/cmake_modules`. The Jetson's a little picky with processor architecture. Go at line 76 and comment the two lines that are there and write this instead:
+```cmake
+set(CXX_SUPPORTS_ARMV8_ARCH 1)
+```
+Now you can run the setup with the following (it will build with only one core which is good since it requires a lot of memory and the Jetson doesn't have nearly as much to do it with more than one):
+```bash
+python setup.py build_ext --build-type=release --bundle-arrow-cpp bdist_wheel
+```
+After this completes, you'll find the wheel inside the `dist` folder. Go in that folder and (in my case):
+```bash
+pip install pyarrow-1.0.1.dev0+g886d87bde.d20240614-cp39-cp39-linux_aarch64.whl
+```
+Open a python session and try the following:
+```bash
+import pyarrow
 from pyarrow import cuda
 ```
-If it doesn't show errors, it means that pyarrow has been built correctly with CUDA support enabled.
+If it doesn't give any errors, then you're good and pyarrow is installed correctly in the system.
 
-#### 4.2) Build DLPack
-
-In the following example snippet I assume that dlpack's source folder is download in `$HOME`. Also, I'd recommend to use no more than 2 cores during compilation to avoid stalling the CPU due to low memory (even with swap active).
+### 7) Building cuDF
+Start by cloning cuDF's repo:
+```bash
+git clone https://github.com/rapidsai/cudf.git
+cd cudf
+git checkout v0.19.0
 ```
-git clone https://github.com/dlmc/dlpack.git
+Now we have to install some packages.
+
+#### 7.1) Build Pandas
+
+We'll need version `1.2.4` exactly.
+```bash
+cd $HOME
+mkdir pandas_src && cd pandas_src
+git clone https://github.com/pandas-dev/pandas.git
+git checkout v1.2.4
+cd pandas
+python setup.py install
+```
+After the install completes, you can remove the pandas source to save space.
+
+#### 7.2) Build DLpack
+```bash
+git clone https://github.com/dmlc/dlpack.git
 cd dlpack
 mkdir install
 mkdir build && cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/dlpack/install
+cmake -DCMAKE_INSTALL_PREFIX=${PWD}/../install ..
+make -j4
+make install
+```
+Go in `install` and move the folders in the appropriate `${CONDA_PREFIX}` ones.
+
+#### 7.3) Build RMM
+
+RMM needs to be of the same version of `cuDF` (0.19.*). Also install `cmake` version `3.18`, `gcc` version `8.5` and also `gxx` version `8.5` via conda before doing this.
+```bash
+git clone --recurse-submodules https://github.com/rapidsai/rmm.git
+cd rmm
+git checkout v0.19.0
+mkdir install
+mkdir build && cd build
+```
+Now, go inside the `rmm/cmake/Modules` and edit the `SetGPUArchs.cmake` file at line 17, adding "53" to the list of supported architectures.
+
+```bash
+# now force the compilation for the current arch only (53)
+cmake -DCMAKE_INSTALL_PREFIX=${PWD}/../install -DCMAKE_CUDA_ARCHITECTURES="" ..
 make -j2
 make install
 ```
-After that, go inside the `install` dir and copy the contents of `lib` to:
-```
-$CONDA_PREFIX/lib
-```
-and the contents of `include` to:
-```
-$CONDA_PREFIX/include
+And, as usual, move it to the `${CONDA_PREFIX}` folders. Then, install also the python module. Go in the `rmm/python` folder. The `setup.py` file needs a little editing since, as you may expect, CUDA for the Tegra SoC is a little different.
+
++ go at line 56 and add below the following:
+  ```python
+	cuda_stubs_dir = os.path.join(CUDA_HOME, "lib64/stubs")
+  ```
++ go now at line 116 and add to the `library_dirs` list the `cuda_stubs_dir` so that it will look like this:
+  ```python
+  library_dirs = [
+    	get_python_lib(),
+    	os.path.join(os.sys.prefix, "lib"),
+    	cuda_lib_dir,
+    	cuda_stubs_dir,
+  ]
+  ```
+
+Now you're ready to do the following:
+```bash
+python setup.py build_ext --inplace
+python setup.py install
 ```
 
-#### 4.3) 
+#### 7.4) Build cuDF
+
+Edit che cmake file in `cpp/cmake/Modules` named `SetGPUArchs.make` in the same way you did before for `rmm` and add the "53" arch to the list of supported architectures.
+
+Export these variables:
+```bash
+export CUDF_HOME=/your/path/to/cudf/download
+export DLPACK_ROOT=/your/path/to/conda/env/lib
+export RMM_ROOT=/your/path/to/conda/env/lib
+```
+Then proceed:
+```bash
+cd $CUDF_HOME/cpp
+mkdir install
+mkdir build && cd build
+```
+And build `cuDF`:
+```bash
+cmake -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_CXX11_ABI=ON -DRMM_INCLUDE=${CONDA_PREFIX}/include/ -DDLPACK_INCLUDE=${CONDA_PREFIX}/include/ -DGPU_ARCHS="" -DCMAKE_CUDA_ARCHITECTURES="" ..
+make -j1
+```
+Use only one core. In case the build fails due to low memory, add a swap file. If the SD is too small to hold it, attach a USB sd card reader to the jetson and bake a swap file there. Then try it again with only one core. It will take anywhere from 18 to 24 hours for a full build.
+
+
 
 
