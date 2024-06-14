@@ -438,9 +438,12 @@ python setup.py install
 After the install completes, you can remove the pandas source to save space.
 
 #### 7.2) Build DLpack
+
+We will need version `0.4`.
 ```bash
 git clone https://github.com/dmlc/dlpack.git
 cd dlpack
+git checkout v0.4
 mkdir install
 mkdir build && cd build
 cmake -DCMAKE_INSTALL_PREFIX=${PWD}/../install ..
@@ -507,11 +510,14 @@ mkdir build && cd build
 ```
 And build `cuDF`:
 ```bash
-cmake -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_CXX11_ABI=ON -DRMM_INCLUDE=${CONDA_PREFIX}/include/ -DDLPACK_INCLUDE=${CONDA_PREFIX}/include/ -DGPU_ARCHS="" -DCMAKE_CUDA_ARCHITECTURES="" ..
+cmake	-DCMAKE_INSTALL_PREFIX=../install \
+	-DCMAKE_CXX11_ABI=ON \
+	-DRMM_INCLUDE=${CONDA_PREFIX}/include/ \
+	-DDLPACK_INCLUDE=${CONDA_PREFIX}/include/ \
+	-DGPU_ARCHS="" \
+	-DCMAKE_CUDA_ARCHITECTURES="" \
+	..
 make -j1
 ```
-Use only one core. In case the build fails due to low memory, add a swap file. If the SD is too small to hold it, attach a USB sd card reader to the jetson and bake a swap file there. Then try it again with only one core. It will take anywhere from 18 to 24 hours for a full build.
-
-
-
+The build will likely fail if you're using a 32 GB sd card. Even with just one core enabled, you'll need at least 9 GB of total swap space so you'll need a swap file of 8 GB minimum. Since this will almost completely fill up the 32GB card, I suggest to clone this card on a 64 GB one and create a swap partition in the remaining 32GB of unallocated space. Then complete the build with this card and when it finishes clone back the 32 GB partition on the old card. The build will take anything from 18 to 24 hours.
 
