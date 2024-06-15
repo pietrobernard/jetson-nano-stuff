@@ -3,22 +3,31 @@ Everything to get the old Jetson Nano Developer Kit 2GB up and running with Ubun
 
 Here are the details of the board.
 <table>
-   <tr>
-      <td><b>Name</b></td>
-      <td>NVIDIA Jetson Nano 2GB Developer Kit</td>
-   </tr>
-   <tr>
-      <td><b>Part</b></td>
-      <td>p3448</td>
-   </tr>
-   <tr>
-      <td><b>SoC</b></td>
-      <td>tegra210 (codename: Batuu)</td>
-   </tr>
-   <tr>
-      <td><b>Compute Capability</b></td>
-      <td>5.3 (architecture: Maxwell)</td>
-   </tr>
+	<tr>
+		<td>
+			<table>
+			   <tr>
+			      <td><b>Name</b></td>
+			      <td>NVIDIA Jetson Nano 2GB Developer Kit</td>
+			   </tr>
+			   <tr>
+			      <td><b>Part</b></td>
+			      <td>p3448</td>
+			   </tr>
+			   <tr>
+			      <td><b>SoC</b></td>
+			      <td>tegra210 (codename: Batuu)</td>
+			   </tr>
+			   <tr>
+			      <td><b>Compute Capability</b></td>
+			      <td>5.3 (architecture: Maxwell)</td>
+			   </tr>
+			</table>
+		</td>
+		<td>
+			<img src="JN_02_KTZ.png">
+		</td>
+	</tr>
 </table>
 
 Official docs are available [here](https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-2gb-devkit).
