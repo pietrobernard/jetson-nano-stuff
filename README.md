@@ -320,14 +320,17 @@ these will be useful since some packages like to find boost libs at those locati
 #### 6.3) Configure cmake for Arrow
 Now go to `${ARROW_HOME}/cpp/thirdparty`. You'll see a file named `versions.txt`. Open it and in the `DEPENDENCIES` section below, delete the entry corresponding to `boost`, since we've already installed it. Also, in the line corresponding to `c-ares`, substitute the link with this static one: `https://github.com/c-ares/c-ares/releases/download/cares-1_16_1/c-ares-1.16.1.tar.gz`. Save the file and run the `donwload_dependencies.sh` script.
 
-Proceed to build and install `thrift` manually, since it fails in the automated procedure. Go in `${ARROW_HOME}/cpp/thirdparty` and untar the `thrift` tarball. Then go inside its folder and run the `bootstrap.sh` script. After that, configure with:
+Proceed to build and install `thrift` manually, since it fails in the automated procedure. Go in `${ARROW_HOME}/cpp/thirdparty` and untar the `thrift` tarball. Then go inside its folder and:
+
+After that, configure with:
 ```bash
 mkdir install
-./configure CPPFLAGS="-I${BOOST_ROOT}" --prefix=${PWD}/install
+./bootstrap.sh
+./configure CPPFLAGS="-I${BOOST_ROOT}" --with-boost=${BOOST_ROOT} --prefix=${PWD}/install
 make -j4
-make install
+sudo make install
 ```
-At this point just move the contents of the `install` dir over to the `${CONDA_PREFIX}`. Edit the `versions.txt` file again and remove the line corresponding to `thrift` in the `DEPENDENCIES` section.
+Now, edit the `versions.txt` file again and remove the line corresponding to `thrift` in the `DEPENDENCIES` section.
 
 Now, go back in the `cpp` folder and create a `build` dir, go inside that and type:
 ```bash
@@ -379,7 +382,51 @@ cmake	-DCMAKE_INSTALL_PREFIX=${ARROW_HOME} \
 	-DTHRIFT_STATIC_LIB=${CONDA_PREFIX}/lib \
 	..
 ```
-cmake could produce some warning due to some variables not being used. Don't worry about them. Before going on and making arrow, go in the `src/parquet/CMakeFiles/parquet_shared.dir` folder and inside. Suppose that your conda environment is named like mine `gpudist`. Seach in those files for entries like `gpudist/lib` and delete the lines/arguments to command where they occurr. After that, proceed with the build:
+cmake could produce some warning due to some variables not being used. Don't worry about them.
+
+Before going on and making arrow, go in the `src/parquet/CMakeFiles/parquet_shared.dir` folder. You'll see these files:
+```bash
+-rw-rw-r--  1 jetson jetson  729 Jun 15 11:27 DependInfo.cmake
+-rw-rw-r--  1 jetson jetson 9994 Jun 15 11:27 build.make
+-rw-rw-r--  1 jetson jetson  324 Jun 15 11:33 cmake_clean.cmake
+-rw-rw-r--  1 jetson jetson   98 Jun 15 11:27 depend.make
+-rw-rw-r--  1 jetson jetson 1593 Jun 15 11:27 flags.make
+-rw-rw-r--  1 jetson jetson 2193 Jun 15 11:27 link.txt
+-rw-rw-r--  1 jetson jetson   21 Jun 15 11:33 progress.make
+```
+Consider `build.make` and `link.txt`. Edit `build.make` and around line `149` you should see the following line (instead of gpudist you should see the name of the env you're into):
+```cmake
+release/libparquet.so.100.1.0: /home/jetson/miniforge3/envs/gpudist/lib
+```
+comment this line out or delete it altogether. Then edit `link.txt` and cancel out the highlighted section:
+```bash::highlight{2}
+/usr/bin/c++ -fPIC  -Wno-noexcept-type -I/home/jetson/miniforge3/envs/gpudist/include \
+-fdiagnostics-color=always -O3 -DNDEBUG  -Wall -march=armv8-a  -O3 -DNDEBUG -Wl,\
+--version-script=/home/jetson/arrow/cpp/src/parquet/symbols.map -shared -Wl,\
+-soname,libparquet.so.100 -o ../../release/libparquet.so.100.1.0 \
+CMakeFiles/parquet_objlib.dir/arrow/path_internal.cc.o CMakeFiles/parquet_objlib.dir/arrow/reader.cc.o \
+CMakeFiles/parquet_objlib.dir/arrow/reader_internal.cc.o CMakeFiles/parquet_objlib.dir/arrow/schema.cc.o \
+CMakeFiles/parquet_objlib.dir/arrow/schema_internal.cc.o CMakeFiles/parquet_objlib.dir/arrow/writer.cc.o \
+CMakeFiles/parquet_objlib.dir/bloom_filter.cc.o CMakeFiles/parquet_objlib.dir/column_reader.cc.o \
+CMakeFiles/parquet_objlib.dir/column_scanner.cc.o CMakeFiles/parquet_objlib.dir/column_writer.cc.o \
+CMakeFiles/parquet_objlib.dir/deprecated_io.cc.o CMakeFiles/parquet_objlib.dir/encoding.cc.o \
+CMakeFiles/parquet_objlib.dir/encryption.cc.o CMakeFiles/parquet_objlib.dir/file_reader.cc.o \
+CMakeFiles/parquet_objlib.dir/file_writer.cc.o CMakeFiles/parquet_objlib.dir/internal_file_decryptor.cc.o \
+CMakeFiles/parquet_objlib.dir/internal_file_encryptor.cc.o CMakeFiles/parquet_objlib.dir/level_conversion.cc.o \
+CMakeFiles/parquet_objlib.dir/metadata.cc.o CMakeFiles/parquet_objlib.dir/murmur3.cc.o \
+CMakeFiles/parquet_objlib.dir/__/generated/parquet_constants.cpp.o CMakeFiles/parquet_objlib.dir/__/generated/parquet_types.cpp.o \
+CMakeFiles/parquet_objlib.dir/platform.cc.o CMakeFiles/parquet_objlib.dir/printer.cc.o \
+CMakeFiles/parquet_objlib.dir/properties.cc.o CMakeFiles/parquet_objlib.dir/schema.cc.o \
+CMakeFiles/parquet_objlib.dir/statistics.cc.o CMakeFiles/parquet_objlib.dir/stream_reader.cc.o \
+CMakeFiles/parquet_objlib.dir/stream_writer.cc.o CMakeFiles/parquet_objlib.dir/types.cc.o \
+CMakeFiles/parquet_objlib.dir/encryption_internal_nossl.cc.o  \
+-Wl,-rpath,/home/jetson/arrow/cpp/build/release: ../../release/libarrow.so.100.1.0 `/home/jetson/miniforge3/envs/gpudist/lib` \
+../../orc_ep-install/lib/liborc.a ../../protobuf_ep-install/lib/libprotobuf.a ../../utf8proc_ep-install/lib/libutf8proc.a -ldl \
+../../jemalloc_ep-prefix/src/jemalloc_ep/dist//lib/libjemalloc_pic.a -pthread -lrt
+```
+
+
+After that, proceed with the build:
 ```bash
 make -j4
 make install
