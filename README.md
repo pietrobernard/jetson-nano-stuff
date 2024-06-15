@@ -273,7 +273,9 @@ if it doesn't show errors, then it works.
 ### 6) Building Arrow
 #### 6.1) Prerequisites
 
-Install `ninja-build` via apt. Then, clone `Arrow` repo via git and checkout version `1.0.1`:
+Install `ninja-build` via apt. Also, install `cmake` version `3.18`, `gcc` version `8.5` and `gxx` version `8.5` via conda before doing this. Make sure you have `libssl-dev` package installed via apt and that conda has installed the `openssl` package (check for presence of `opensslv.h` inside `${CONDA_PREFIX}/include/openssl`.
+
+Then, clone `Arrow` repo via git and checkout version `1.0.1`:
 ```bash
 git clone https://github.com/apache/arrow.git
 cd arrow
@@ -454,7 +456,7 @@ Go in `install` and move the folders in the appropriate `${CONDA_PREFIX}` ones.
 
 #### 7.3) Build RMM
 
-RMM needs to be of the same version of `cuDF` (0.19.*). Also install `cmake` version `3.18`, `gcc` version `8.5` and also `gxx` version `8.5` via conda before doing this.
+RMM needs to be of the same version of `cuDF` (0.19.*).
 ```bash
 git clone --recurse-submodules https://github.com/rapidsai/rmm.git
 cd rmm
