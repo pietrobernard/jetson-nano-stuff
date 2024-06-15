@@ -336,6 +336,7 @@ mkdir install
 ./configure CPPFLAGS="-I${BOOST_ROOT}" --with-boost=${BOOST_ROOT} --prefix=${PWD}/install
 make -j4
 sudo make install
+export THRIFT_ROOT=${PWD}/install
 ```
 Now, edit the `versions.txt` file again and remove the line corresponding to `thrift` in the `DEPENDENCIES` section.
 
@@ -386,7 +387,8 @@ cmake	-DCMAKE_INSTALL_PREFIX=${ARROW_HOME} \
 	-DZLIB_SOURCE=BUNDLED \
 	-DZSTD_SOURCE=BUNDLED \
 	-DBoost_ROOT=${BOOST_ROOT} \
-	-DTHRIFT_STATIC_LIB=${CONDA_PREFIX}/lib \
+	-DThrift_ROOT=${THRIFT_ROOT} \
+	-DTHRIFT_STATIC_LIB=${THRIFT_ROOT}/lib \
 	..
 ```
 cmake could produce some warning due to some variables not being used. Don't worry about them.
