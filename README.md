@@ -498,12 +498,18 @@ Now, even if `rmm/cmake/Modules/SetGPUArchs.cmake` file, at line 17, does not co
 cmake -DCMAKE_INSTALL_PREFIX=${PWD}/../install -DCMAKE_CUDA_ARCHITECTURES="" ..
 make -j4
 make install
+cd ..
+export RMM_ROOT=${PWD}
 ```
 Then, install also the python module. Go in the `rmm/python` folder. The `setup.py` file needs a little editing since, as you may expect, CUDA for the Tegra SoC is a little different.
 
 + go at line 56 and add below the following:
   ```python
-	cuda_stubs_dir = os.path.join(CUDA_HOME, "lib64/stubs")
+  cuda_stubs_dir = os.path.join(CUDA_HOME, "lib64/stubs")
+  ```
++ go at line 60 and edit the line so that it will look like this:
+  ```python
+  INSTALL_PREFIX = os.environ.get("RMM_ROOT", False)
   ```
 + go now at line 116 and add to the `library_dirs` list the `cuda_stubs_dir` so that it will look like this:
   ```python
@@ -519,11 +525,6 @@ Now you're ready to do the following:
 ```bash
 python setup.py build_ext --inplace
 python setup.py install
-```
-Finally, export this var:
-Then, export this var:
-```bash
-export DRMM_ROOT=/your/path/to/rmm
 ```
 
 #### 7.4) Build cuDF
