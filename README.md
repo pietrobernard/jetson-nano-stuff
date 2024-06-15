@@ -281,10 +281,10 @@ if it doesn't show errors, then it works.
 
 ### 6) Building Arrow
 
-Before doing anything, we have to use a version of gcc/g++ that is `\leq 8`. Install `g++-8` via apt and then, after having removed `/usr/bin/gcc` and `/usr/bin/g++` do:
+Before doing anything, we have to use a version of gcc/g++ that is `≤ 8`. Install `g++-8` via apt and then, after having removed `/usr/bin/gcc` and `/usr/bin/g++` do:
 ```bash
-	sudo ln -s gcc-8 /usr/bin/gcc
-	sudo ln -s g++-8 /usr/bin/g++
+sudo ln -s gcc-8 /usr/bin/gcc
+sudo ln -s g++-8 /usr/bin/g++
 ```
 
 #### 6.1) Prerequisites
@@ -299,8 +299,8 @@ git checkout apache-arrow-1.0.1
 ```
 Go inside the `arrow` folder, and create the `dist` folder. Edit the `.bashrc` file and add, assuming arrow is in $HOME:
 ```bash
-export ARROW_HOME=${HOME}/arrow/dist
-export LD_LIBRARY_PATH=${HOME}/arrow/dist/lib:$LD_LIBRARY_PATH
+export ARROW_HOME=${HOME}/arrow/cpp
+export LD_LIBRARY_PATH=${HOME}/arrow/cpp/lib:$LD_LIBRARY_PATH
 ```
 reload the `.bashrc` so that these vars will be exported.
 
