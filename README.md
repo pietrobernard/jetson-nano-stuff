@@ -273,7 +273,7 @@ if it doesn't show errors, then it works.
 ### 6) Building Arrow
 #### 6.1) Prerequisites
 
-Install `ninja-build` via apt. Also, install `cmake` version `3.18`, `gcc` version `8.5` and `gxx` version `8.5` via conda before doing this. Make sure you have `libssl-dev` package installed via apt and that conda has installed the `openssl` package (check for presence of `opensslv.h` inside `${CONDA_PREFIX}/include/openssl`.
+Install `ninja-build` via apt. Also, install `cmake` version `3.18`, `gcc` version `8.5` and `gxx` version `8.5` via conda before doing this. Also, make sure that conda has `openssl=1.1.1f`.
 
 Then, clone `Arrow` repo via git and checkout version `1.0.1`:
 ```bash
@@ -296,7 +296,8 @@ wget https://archives.boost.io/release/1.71.0/source/boost_1_71_0.tar.gz
 ```
 go inside `boost_1_71_0` folder and run the bootstrap script:
 ```bash
-./bootstrap
+mkdir install
+./bootstrap.sh --prefix=${PWD}/install --exec-prefix=${PWD}/install
 ```
 this will build the `b2` program. Start the build via:
 ```bash
@@ -304,7 +305,7 @@ this will build the `b2` program. Start the build via:
 ```
 at this point, assuming you've got the boost libs in `$HOME/boost_1_71_0`, you'll have the include path in `$HOME/boost_1_71_0` (folder `boost`) and the lib path in `$HOME/boost_1_71_0/stage/lib`. We can thus add to the bashrc the following lines:
 ```bash
-export LD_LIBRARY_PATH=/path/to/boost/boost_1_71_0:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/path/to/boost/boost_1_71_0/stage/lib:$LD_LIBRARY_PATH
 export BOOST_ROOT=/path/to/boost/boost_1_71_0
 export BOOST_INCLUDEDIR=/home/jetson/boost_1_71_0/boost
 export BOOST_LIBRARYDIR=/home/jetson/boost_1_71_0/stage/lib
@@ -312,7 +313,7 @@ export BOOST_LIBRARYDIR=/home/jetson/boost_1_71_0/stage/lib
 these vars will be used in the following to build Arrow. Also, create two links:
 ```
 ln -s ${BOOST_ROOT}/boost ${BOOST_ROOT}/include
-ln -s ${BOOST_ROOT}/boost/stage/lib ${BOOST_ROOT}/lib
+ln -s ${BOOST_ROOT}/stage/lib ${BOOST_ROOT}/lib
 ```
 these will be useful since some packages like to find boost libs at those locations.
 
@@ -322,7 +323,7 @@ Now go to `${ARROW_HOME}/cpp/thirdparty`. You'll see a file named `versions.txt`
 Proceed to build and install `thrift` manually, since it fails in the automated procedure. Go in `${ARROW_HOME}/cpp/thirdparty` and untar the `thrift` tarball. Then go inside its folder and run the `bootstrap.sh` script. After that, configure with:
 ```bash
 mkdir install
-./configure CPPFLAGS="-I${BOOST_ROOT} -I${CONDA_PREFIX}/include -L${CONDA_PREFIX}/lib" --prefix=${PWD}/install
+./configure CPPFLAGS="-I${BOOST_ROOT}" --prefix=${PWD}/install
 make -j4
 make install
 ```
