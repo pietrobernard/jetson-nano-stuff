@@ -539,7 +539,7 @@ python setup.py install
 
 #### 7.4) Build cuDF
 
-Edit che cmake file in `cpp/cmake/Modules` named `SetGPUArchs.make` in the same way you did before for `rmm` and add the "53" arch to the list of supported architectures.
+<br>⚠️Warning⚠️: in order to build cuDF you're going to need a 10 GB swap file/partition. If you are using a 32 GB card, there won't be enough space at this point. So, clone the card onto a 64 GB one and create a swap partition in the 32 GB unallocated space and then put the 64 GB card in the board. At this point you can build cuDF. When you're done building cuDF, clone the 32 GB partition back on the old 32 GB card.</br>
 
 Export this variable:
 ```bash
@@ -553,14 +553,14 @@ mkdir build && cd build
 ```
 And build `cuDF`:
 ```bash
-cmake	-DCMAKE_INSTALL_PREFIX=../install \
+cmake	-DMAKE_INSTALL_PREFIX=${PWD}/../install \
 	-DCMAKE_CXX11_ABI=ON \
-	-DRMM_INCLUDE=${CONDA_PREFIX}/include/ \
-	-DDLPACK_INCLUDE=${CONDA_PREFIX}/include/ \
+	-DRMM_INCLUDE=${RMM_ROOT}/include \
+	-DDLPACK_INCLUDE=${DLPACK_ROOT}/include \
 	-DGPU_ARCHS="" \
 	-DCMAKE_CUDA_ARCHITECTURES="" \
 	..
 make -j1
 ```
-The build will likely fail if you're using a 32 GB sd card. Even with just one core enabled, you'll need at least 9 GB of total swap space so you'll need a swap file of 8 GB minimum. Since this will almost completely fill up the 32GB card, I suggest to clone this card on a 64 GB one and create a swap partition in the remaining 32GB of unallocated space. Then complete the build with this card and when it finishes clone back the 32 GB partition on the old card. The build will take anything from 18 to 24 hours.
+The build will take anything from 18 to 24 hours.
 
