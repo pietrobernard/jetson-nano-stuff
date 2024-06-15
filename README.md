@@ -271,9 +271,16 @@ from cupy import cuda
 if it doesn't show errors, then it works.
 
 ### 6) Building Arrow
+
+Before doing anything, we have to use a version of gcc/g++ that is `\leq 8`. Install `g++-8` via apt and then, after having removed `/usr/bin/gcc` and `/usr/bin/g++` do:
+```bash
+	sudo ln -s gcc-8 /usr/bin/gcc
+	sudo ln -s g++-8 /usr/bin/g++
+```
+
 #### 6.1) Prerequisites
 
-Install `ninja-build` via apt. Also, install `cmake` version `3.18`, `gcc` version `8.5` and `gxx` version `8.5` via conda before doing this. Also, make sure that conda has `openssl=1.1.1f`.
+Install `cmake` version `3.18`.
 
 Then, clone `Arrow` repo via git and checkout version `1.0.1`:
 ```bash
