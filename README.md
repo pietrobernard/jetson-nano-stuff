@@ -322,7 +322,7 @@ Now go to `${ARROW_HOME}/cpp/thirdparty`. You'll see a file named `versions.txt`
 Proceed to build and install `thrift` manually, since it fails in the automated procedure. Go in `${ARROW_HOME}/cpp/thirdparty` and untar the `thrift` tarball. Then go inside its folder and run the `bootstrap.sh` script. After that, configure with:
 ```bash
 mkdir install
-./configure CPPFLAGS="-I${BOOST_ROOT}" --prefix=${PWD}/install
+./configure CPPFLAGS="-I${BOOST_ROOT} -I${CONDA_PREFIX}/include -L${CONDA_PREFIX}/lib" --prefix=${PWD}/install
 make -j4
 make install
 ```
