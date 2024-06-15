@@ -135,7 +135,9 @@ Edit the file at `/etc/update-manager/release-upgrades`, changing the last line 
 ### 4) Upgrade
 
 <hr>
-<b>Warning</b>: if you used the second method to build the sd-card image, before you proceed you must edit the `/etc/apt/apt.conf.d/01autoremove` file adding these lines:
+<b>⚠️Warning⚠️</b>
+
+If you used the second method to build the sd-card image, before you proceed you must edit the `/etc/apt/apt.conf.d/01autoremove` file adding these lines:
 
 ```bash
 	"libnvidia-container-tools";
@@ -196,11 +198,15 @@ To launch the upgrade, it is best to connect a keyboard to the Jetson and an HDM
 sudo do-release-upgrade
 ```
 
-During the procedure you might be prompted about what to do with several configuration files. Just go for the default option. <b>At the end, it should ask you whether you want to remove obsolete software. Do not remove it (just type enter) otherwise some of Nvidia's proprietary stuff will get deleted and the system will break</b>. Once the system reboots (hopefully), you'll have to repair some broken packages. Try:
+During the procedure you might be prompted about what to do with several configuration files. Just go for the default option.
+
+<b>⚠️ At the end, it should ask you whether you want to remove obsolete software. Do not remove it (just type enter) otherwise some of Nvidia's proprietary stuff will get deleted and the system will break.⚠️</b>
+
+Once the system reboots (hopefully), try:
 ```bash
 sudo apt update
 ```
-If it fails, then:
+If the command fails due to broken packages, then repair them:
 ```bash
 sudo dpkg --configure -a
 ```
