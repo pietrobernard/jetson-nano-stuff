@@ -1,27 +1,35 @@
 # Jetson Nano 2GB devkit - Ubuntu 20.04 + GPGPU packages
-Everything to get the old Jetson Nano Developer Kit 2GB up and running with Ubuntu 20.04 and a lot of other things. This board is no longer in production as of 2024 but if you still have one (or more) of these and you want to play around with it, this document will help.
+Everything to get the old Jetson Nano Developer Kit 2GB up and running with Ubuntu 20.04 and GPGPUs packages.
 
 Here are the details of the board.
 <table>
 	<tr>
 		<td>
 			<table>
-			   <tr>
-			      <td><b>Name</b></td>
-			      <td>NVIDIA Jetson Nano 2GB Developer Kit</td>
-			   </tr>
-			   <tr>
-			      <td><b>Part</b></td>
-			      <td>p3448</td>
-			   </tr>
-			   <tr>
-			      <td><b>SoC</b></td>
-			      <td>tegra210 (codename: Batuu)</td>
-			   </tr>
-			   <tr>
-			      <td><b>Compute Capability</b></td>
-			      <td>5.3 (architecture: Maxwell)</td>
-			   </tr>
+				<tr>
+			      		<td><b>Name</b></td>
+			      		<td>NVIDIA Jetson Nano 2GB Developer Kit</td>
+			   	</tr>
+			   	<tr>
+			      		<td><b>Part</b></td>
+			     	 	<td>p3448</td>
+			   	</tr>
+			   	<tr>
+			      		<td><b>SoC</b></td>
+			      		<td>tegra210 (codename: Batuu)</td>
+			   	</tr>
+				<tr>
+					<td><b>Processor</b></td>
+					<td>ARMv8 Processor rev 1</td>
+				</tr>
+      				<tr>
+					<td><b>Memory</b></td>
+					<td>2 GB LPDDR4</td>
+				</tr>
+				<tr>
+			      		<td><b>Compute Capability</b></td>
+			      		<td>5.3 (architecture: Maxwell)</td>
+			   	</tr>
 			</table>
 		</td>
 		<td>
