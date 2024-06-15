@@ -450,11 +450,10 @@ We'll need version `1.2.4` exactly.
 cd $HOME
 mkdir pandas_src && cd pandas_src
 git clone https://github.com/pandas-dev/pandas.git
-git checkout v1.2.4
 cd pandas
+git checkout v1.2.4
 python setup.py install
 ```
-After the install completes, you can remove the pandas source to save space.
 
 #### 7.2) Build DLpack
 
@@ -469,11 +468,14 @@ cmake -DCMAKE_INSTALL_PREFIX=${PWD}/../install ..
 make -j4
 make install
 ```
-Go in `install` and move the folders in the appropriate `${CONDA_PREFIX}` ones.
+Then, export this var:
+```bash
+export DLPACK_ROOT=/your/path/to/dlpack
+```
 
 #### 7.3) Build RMM
 
-RMM needs to be of the same version of `cuDF` (0.19.*).
+RMM needs to be of the same version of `cuDF` (0.19.0).
 ```bash
 git clone --recurse-submodules https://github.com/rapidsai/rmm.git
 cd rmm
@@ -481,15 +483,14 @@ git checkout v0.19.0
 mkdir install
 mkdir build && cd build
 ```
-Now, go inside the `rmm/cmake/Modules` and edit the `SetGPUArchs.cmake` file at line 17, adding "53" to the list of supported architectures.
-
+Now, even if `rmm/cmake/Modules/SetGPUArchs.cmake` file, at line 17, does not contain "53" in the list of supported architectures, it doesn't matter because we're going to force it:
 ```bash
 # now force the compilation for the current arch only (53)
 cmake -DCMAKE_INSTALL_PREFIX=${PWD}/../install -DCMAKE_CUDA_ARCHITECTURES="" ..
 make -j2
 make install
 ```
-And, as usual, move it to the `${CONDA_PREFIX}` folders. Then, install also the python module. Go in the `rmm/python` folder. The `setup.py` file needs a little editing since, as you may expect, CUDA for the Tegra SoC is a little different.
+Then, install also the python module. Go in the `rmm/python` folder. The `setup.py` file needs a little editing since, as you may expect, CUDA for the Tegra SoC is a little different.
 
 + go at line 56 and add below the following:
   ```python
@@ -510,16 +511,19 @@ Now you're ready to do the following:
 python setup.py build_ext --inplace
 python setup.py install
 ```
+Finally, export this var:
+Then, export this var:
+```bash
+export DRMM_ROOT=/your/path/to/rmm
+```
 
 #### 7.4) Build cuDF
 
 Edit che cmake file in `cpp/cmake/Modules` named `SetGPUArchs.make` in the same way you did before for `rmm` and add the "53" arch to the list of supported architectures.
 
-Export these variables:
+Export this variable:
 ```bash
 export CUDF_HOME=/your/path/to/cudf/download
-export DLPACK_ROOT=/your/path/to/conda/env/lib
-export RMM_ROOT=/your/path/to/conda/env/lib
 ```
 Then proceed:
 ```bash
