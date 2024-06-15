@@ -19,15 +19,15 @@ Here are the details of the board.
 			      		<td>tegra210 (codename: Batuu)</td>
 			   	</tr>
 				<tr>
-					<td><b>Processor</b></td>
+					<td><b>CPU</b></td>
 					<td>ARMv8 Processor rev 1</td>
 				</tr>
       				<tr>
-					<td><b>Memory</b></td>
+					<td><b>RAM</b></td>
 					<td>2 GB LPDDR4</td>
 				</tr>
 				<tr>
-			      		<td><b>Compute Capability</b></td>
+			      		<td><b>Compute Cap.</b></td>
 			      		<td>5.3 (architecture: Maxwell)</td>
 			   	</tr>
 			</table>
