@@ -398,43 +398,12 @@ Consider `build.make` and `link.txt`. Edit `build.make` and around line `149` yo
 ```cmake
 release/libparquet.so.100.1.0: /home/jetson/miniforge3/envs/gpudist/lib
 ```
-comment this line out or delete it altogether. Then edit `link.txt` and cancel out the highlighted section:
-```bash::highlight{2}
-/usr/bin/c++ -fPIC  -Wno-noexcept-type -I/home/jetson/miniforge3/envs/gpudist/include \
--fdiagnostics-color=always -O3 -DNDEBUG  -Wall -march=armv8-a  -O3 -DNDEBUG -Wl,\
---version-script=/home/jetson/arrow/cpp/src/parquet/symbols.map -shared -Wl,\
--soname,libparquet.so.100 -o ../../release/libparquet.so.100.1.0 \
-CMakeFiles/parquet_objlib.dir/arrow/path_internal.cc.o CMakeFiles/parquet_objlib.dir/arrow/reader.cc.o \
-CMakeFiles/parquet_objlib.dir/arrow/reader_internal.cc.o CMakeFiles/parquet_objlib.dir/arrow/schema.cc.o \
-CMakeFiles/parquet_objlib.dir/arrow/schema_internal.cc.o CMakeFiles/parquet_objlib.dir/arrow/writer.cc.o \
-CMakeFiles/parquet_objlib.dir/bloom_filter.cc.o CMakeFiles/parquet_objlib.dir/column_reader.cc.o \
-CMakeFiles/parquet_objlib.dir/column_scanner.cc.o CMakeFiles/parquet_objlib.dir/column_writer.cc.o \
-CMakeFiles/parquet_objlib.dir/deprecated_io.cc.o CMakeFiles/parquet_objlib.dir/encoding.cc.o \
-CMakeFiles/parquet_objlib.dir/encryption.cc.o CMakeFiles/parquet_objlib.dir/file_reader.cc.o \
-CMakeFiles/parquet_objlib.dir/file_writer.cc.o CMakeFiles/parquet_objlib.dir/internal_file_decryptor.cc.o \
-CMakeFiles/parquet_objlib.dir/internal_file_encryptor.cc.o CMakeFiles/parquet_objlib.dir/level_conversion.cc.o \
-CMakeFiles/parquet_objlib.dir/metadata.cc.o CMakeFiles/parquet_objlib.dir/murmur3.cc.o \
-CMakeFiles/parquet_objlib.dir/__/generated/parquet_constants.cpp.o CMakeFiles/parquet_objlib.dir/__/generated/parquet_types.cpp.o \
-CMakeFiles/parquet_objlib.dir/platform.cc.o CMakeFiles/parquet_objlib.dir/printer.cc.o \
-CMakeFiles/parquet_objlib.dir/properties.cc.o CMakeFiles/parquet_objlib.dir/schema.cc.o \
-CMakeFiles/parquet_objlib.dir/statistics.cc.o CMakeFiles/parquet_objlib.dir/stream_reader.cc.o \
-CMakeFiles/parquet_objlib.dir/stream_writer.cc.o CMakeFiles/parquet_objlib.dir/types.cc.o \
-CMakeFiles/parquet_objlib.dir/encryption_internal_nossl.cc.o  \
--Wl,-rpath,/home/jetson/arrow/cpp/build/release: ../../release/libarrow.so.100.1.0 `/home/jetson/miniforge3/envs/gpudist/lib` \
-../../orc_ep-install/lib/liborc.a ../../protobuf_ep-install/lib/libprotobuf.a ../../utf8proc_ep-install/lib/libutf8proc.a -ldl \
-../../jemalloc_ep-prefix/src/jemalloc_ep/dist//lib/libjemalloc_pic.a -pthread -lrt
-```
-
+comment this line out or delete it altogether. Then open `link.txt` and go at the end of the line. Start to scan the line backwards until you come across `../../orc_ep-install/lib/liborc.a`. If you continue scanning backward a bit you'll see that you'll find something like: `/home/jetson/miniforge3/envs/gpudist/lib`. Delete that chunk and save the file.
 
 After that, proceed with the build:
 ```bash
 make -j4
 make install
-```
-Go inside the `install` dir and move the things to the appropriate folders in the `${CONDA_PREFIX}`. Create these static links inside the `${ARROW_HOME}` folder:
-```bash
-ln -s /your/path/to/conda/env/include include
-ln -s /your/path/to/conda/env/lib lib
 ```
 After that, go in the `arrow/python` folder. Set this env vars:
 ```bash
