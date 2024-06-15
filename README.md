@@ -34,7 +34,7 @@ Official docs are available [here](https://developer.nvidia.com/embedded/learn/g
 
 This document describes how to create a bootable SD card image, update to Ubuntu 20.04 and install some libraries to exploit gpgpu computing both in python (e.g. numba, cupy, cudf) and c++ tool (nvcc, ecc). Also, directions to use distributed computing tools (dask, kafka) will be given. Specifically:
 + numba 0.56.4
-+ cupy
++ cupy 12.3.0
 + pyarrow 1.0.1
 + cudf 0.19.0
 
@@ -539,7 +539,9 @@ python setup.py install
 
 #### 7.4) Build cuDF
 
-<br>⚠️Warning⚠️: in order to build cuDF you're going to need a 10 GB swap file/partition. If you are using a 32 GB card, there won't be enough space at this point. So, clone the card onto a 64 GB one and create a swap partition in the 32 GB unallocated space and then put the 64 GB card in the board. At this point you can build cuDF. When you're done building cuDF, clone the 32 GB partition back on the old 32 GB card.</br>
+<b>⚠️Warning⚠️</b>
+
+In order to build cuDF you're going to need a 10 GB swap file/partition. If you are using a 32 GB card, there won't be enough space at this point. So, clone the card onto a 64 GB one and create a swap partition in the 32 GB unallocated space and then put the 64 GB card in the board. At this point you can build cuDF. When you're done building cuDF, clone the 32 GB partition back on the old 32 GB card.
 
 Export this variable:
 ```bash
@@ -562,5 +564,7 @@ cmake	-DMAKE_INSTALL_PREFIX=${PWD}/../install \
 	..
 make -j1
 ```
-The build will take anything from 18 to 24 hours.
+The build will take anything from 18 to 24 hours. After this is completed we can proceed to build the python modules.
+
+### 8) Dask
 
