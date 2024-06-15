@@ -80,30 +80,30 @@ Once you've done this, you can use a tool like `balena etcher` to write `sd-blob
 
 2. Untar the `Driver Package` with the following:
    ```bash
-	sudo tar -xpf <filename>.tbz2
+   sudo tar -xpf <filename>.tbz2
    ```
    it is <b>extremely</b> important to untar as sudo and to use the `-xpf` flags. Otherwise, permissions will be screwed up and the subsequent actions won't work. This will create a folder named `Linux_for_Tegra`.
 
 3. Move the `Sample Root Filesystem`'s tar inside `Linux_for_Tegra/rootfs` and untar it there:
    ```bash
-	sudo tar -xpf <filename>.tbz2
+   sudo tar -xpf <filename>.tbz2
    ```
 
 4. Go inside the `Linux_for_Tegra` directory and launch, as sudo, the `apply_binaries.sh` script. <b>Do it ONLY ONCE</b> otherwise the image will be corrupted!
 
 5. Go inside the `Linux_for_Tegra/tools` directory and run, as sudo, the `l4t_create_default_user.sh` script with the followings args:
    ```bash
-	-u : specifies the user name (e.g. jetson)
-   	-p : specifies the password (e.g. jetson)
-   	-n : specifies the host name (e.g. jetson)
-   	--accept-license : already accepts the license so that the system is ready to go
-   	--autologin : if you want the system to autologin
+   -u : specifies the user name (e.g. jetson)
+   -p : specifies the password (e.g. jetson)
+   -n : specifies the host name (e.g. jetson)
+   --accept-license : already accepts the license so that the system is ready to go
+   --autologin : if you want the system to autologin
    ```
 
 6. Build the image by running, as sudo, script `jetson-disk-image-creator.sh` with the options:
    ```bash
-	-o : output file (must end with .img extension)
-   	-b : must be exactly jetson-nano-2gb-devkit
+   -o : output file (must end with .img extension)
+   -b : must be exactly jetson-nano-2gb-devkit
    ```
 After this, you can place the card in the jetson and boot.
 
@@ -114,7 +114,7 @@ First thing to do, as usual:
 sudo apt update
 sudo apt upgrade
 ```
-Remove chromium browser:
+Remove chromium browser since otherwise it will cause problems during the update:
 ```bash
 sudo apt --purge remove chromium-browser
 ```
@@ -251,7 +251,7 @@ this will install the `jtop` python's module that will be useful later.
 
 #### 5.4) Install `numba` and `cupy` with GPU support
 
-To install numba, we'll have to get the higher version that supports CUDA 10.2 that is the 0.56.4. So:
+To install numba, we'll have to get the highest version that supports CUDA 10.2 that is the 0.56.4. So:
 ```bash
 conda install numba=0.56.4
 ```
@@ -303,7 +303,10 @@ sudo ln -s g++-8 /usr/bin/g++
 
 #### 6.1) Prerequisites
 
-Install `cmake` version `3.18`.
+Install `CMake` version `3.18` via conda:
+```bash
+conda install cmake=3.18
+```
 
 Then, clone `Arrow` repo via git and checkout version `1.0.1`:
 ```bash
