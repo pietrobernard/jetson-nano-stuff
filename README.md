@@ -403,11 +403,11 @@ Before going on and making arrow, go in the `src/parquet/CMakeFiles/parquet_shar
 -rw-rw-r--  1 jetson jetson 2193 Jun 15 11:27 link.txt
 -rw-rw-r--  1 jetson jetson   21 Jun 15 11:33 progress.make
 ```
-Consider `build.make` and `link.txt`. Edit `build.make` and around line `149` you should see the following line (instead of gpudist you should see the name of the env you're into):
+Consider `build.make` and `link.txt`. Edit `build.make` and around line `149` you should see a line similar to this: 
 ```cmake
-release/libparquet.so.100.1.0: /home/jetson/miniforge3/envs/gpudist/lib
+release/libparquet.so.100.1.0: ../thirdparty/thrift-0.12.0/install/lib
 ```
-comment this line out or delete it altogether. Then open `link.txt` and go at the end of the line. Start to scan the line backwards until you come across `../../orc_ep-install/lib/liborc.a`. If you continue scanning backward a bit you'll see that you'll find something like: `/home/jetson/miniforge3/envs/gpudist/lib`. Delete that chunk and save the file.
+comment this line out or delete it altogether. Then open `link.txt` and go at the end of the line. Start to scan the line backwards until you come across `../../orc_ep-install/lib/liborc.a`. If you continue scanning backward a bit you'll see that you'll find something like the line you just commented in the other file. Delete that chunk and save the file.
 
 After that, proceed with the build:
 ```bash
@@ -496,7 +496,7 @@ Now, even if `rmm/cmake/Modules/SetGPUArchs.cmake` file, at line 17, does not co
 ```bash
 # now force the compilation for the current arch only (53)
 cmake -DCMAKE_INSTALL_PREFIX=${PWD}/../install -DCMAKE_CUDA_ARCHITECTURES="" ..
-make -j2
+make -j4
 make install
 ```
 Then, install also the python module. Go in the `rmm/python` folder. The `setup.py` file needs a little editing since, as you may expect, CUDA for the Tegra SoC is a little different.
