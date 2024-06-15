@@ -509,6 +509,7 @@ make -j4
 make install
 cd ..
 export RMM_ROOT=${PWD}
+export LD_LIBRARY_PATH=${PWD}/install/lib:$LD_LIBRARY_PATH
 ```
 Then, install also the python module. Go in the `rmm/python` folder. The `setup.py` file needs a little editing since, as you may expect, CUDA for the Tegra SoC is a little different.
 
