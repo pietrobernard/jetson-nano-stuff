@@ -440,6 +440,10 @@ After that, proceed with the build:
 make -j4
 make install
 ```
+Create a static link to `protoc`:
+```bash
+sudo ln -s ${ARROW_HOME}/build/protobuf_ep-install/bin/protoc-3.12.1.0 /usr/bin/protoc
+```
 After that, go in the `arrow/python` folder. Set this env vars:
 ```bash
 export PYARROW_WITH_CUDA=1
@@ -580,9 +584,67 @@ cmake	-DMAKE_INSTALL_PREFIX=${PWD}/../install \
 	-DCMAKE_CUDA_ARCHITECTURES="" \
 	..
 make -j1
-make install
+sudo make install
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH/usr/local/lib:
+sudo ldconfig
 ```
 The build will take approximately 18 hours on a class 10, A1, microSDXC UHS-I card (rated at a nominal speed of 140 MB/s). After this is completed we can proceed to build the python modules.
+
+Export the following variable:
+```bash
+export CUDF_ROOT=${CUDF_HOME}/cpp/build
+```
+
+Go inside `${CUDF_HOME}/python/cudf` and edit the `setup.py` file in the following manner. Consider the code block from line 165 (it starts with `extensions = [`) up to line 199 (it ends with `]`). Add the lines that are marked below between the comments. Of course you should input the path that corresponds to your installation. If you've followed exactly what I've done before, then you can copy and paste the code below:
+```python
+extensions = [
+    Extension(
+        "*",
+        sources=cython_files,
+        include_dirs=[
+            os.path.abspath(os.path.join(CUDF_HOME, "cpp/include/cudf")),
+            os.path.abspath(os.path.join(CUDF_HOME, "cpp/include")),
+            os.path.abspath(os.path.join(CUDF_ROOT, "include")),
+            os.path.join(CUDF_ROOT, "_deps/libcudacxx-src/include"),
+            os.path.join(CUDF_ROOT, "_deps/dlpack-src/include"),
+            os.path.join(
+                os.path.dirname(sysconfig.get_path("include")),
+                "libcudf/libcudacxx",
+            ),
+            os.path.dirname(sysconfig.get_path("include")),
+            # THE FOLLOWING TWO LINES HAVE BEEN ADDED
+            os.path.join("/usr/local/include/libcudf/libcudacxx"),
+            os.path.join("/usr/local/include"),
+            # END OF EDIT
+            np.get_include(),
+            pa.get_include(),
+            cuda_include_dir,
+        ],
+        library_dirs=(
+            pa.get_library_dirs()
+            + [
+                get_python_lib(),
+                os.path.join(os.sys.prefix, "lib"),
+                # THE FOLLOWING LINE HAS BEEN ADDED
+                os.path.join("/usr/local/lib"),
+                # END OF EDIT
+                cuda_lib_dir,
+            ]
+        ),
+        libraries=["cudart", "cudf"] + pa.get_libraries() + ["arrow_cuda"],
+        language="c++",
+        extra_compile_args=["-std=c++14"],
+    )
+]
+```
+Then go on with the build:
+```bash
+python setup.py build_ext --inplace
+python setup.py install
+```
+
+
+
 
 ### 8) Dask
 
