@@ -580,8 +580,9 @@ cmake	-DMAKE_INSTALL_PREFIX=${PWD}/../install \
 	-DCMAKE_CUDA_ARCHITECTURES="" \
 	..
 make -j1
+make install
 ```
-The build will take anything from 18 to 24 hours. After this is completed we can proceed to build the python modules.
+The build will take approximately 18 hours on a class 10, A1, microSDXC UHS-I card (rated at a nominal speed of 140 MB/s). After this is completed we can proceed to build the python modules.
 
 ### 8) Dask
 
