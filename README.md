@@ -615,6 +615,7 @@ extensions = [
             # THE FOLLOWING TWO LINES HAVE BEEN ADDED
             os.path.join("/usr/local/include/libcudf/libcudacxx"),
             os.path.join("/usr/local/include"),
+            os.path.join("/home/jetson/dlpack/install/include"),
             # END OF EDIT
             np.get_include(),
             pa.get_include(),
@@ -627,6 +628,7 @@ extensions = [
                 os.path.join(os.sys.prefix, "lib"),
                 # THE FOLLOWING LINE HAS BEEN ADDED
                 os.path.join("/usr/local/lib"),
+                os.path.join("/home/jetson/dlpack/install/lib"),
                 # END OF EDIT
                 cuda_lib_dir,
             ]
