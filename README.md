@@ -364,6 +364,14 @@ make -j4
 sudo make install
 export THRIFT_ROOT=${PWD}/install
 ```
+Add a `.conf` file for Thrift in `/etc/ld.so.conf.d`. The file should be called `thrift.conf` and should contain the line given by the command:
+```bash
+echo ${THRIFT_ROOT}/lib
+```
+which in my case is: `/home/jetson/arrow/cpp/thirdparty/thrift-0.12.0/install/lib`. Save the file as sudo and then:
+```bash
+sudo ldconfig
+```
 Now, edit the `versions.txt` file again and remove the line corresponding to `thrift` in the `DEPENDENCIES` section.
 
 Now, go back in the `cpp` folder and create a `build` dir, go inside that and type:
@@ -636,6 +644,24 @@ Then go on with the build:
 python setup.py build_ext --inplace
 python setup.py install
 ```
+Then go in the home directory and open a python session and try importing cudf. You should see the following message:
+```bash
+>>> import cudf
+/home/jetson/miniforge3/envs/gpudist/lib/python3.9/site-packages/cudf-0.19.0+0.gf07b25103e.dirty-py3.9-linux-aarch64.egg/cudf/utils/gpu_utils.py:92: UserWarning: You will need a GPU with NVIDIA Pascal™ or newer architecture
+Detected GPU 0: NVIDIA Tegra X1 
+Detected Compute Capability: 5.3
+  warnings.warn(
+>>> 
+```
+If everything went well, check that the GPU is being used in this manner: open another ssh session and run `jtop` in it. From the other session, in the python terminal run these commands:
+```python
+import cudf as cf
+import pandas as pd
+import numpy as np
+df = pd.DataFrame(np.arange(10**5))
+cdf = cf.from_pandas(df)
+```
+The very last command should trigger the GPU and you'll see on jtop the GPU utilization spiking and the shared memory rising like so:
 
 
 
