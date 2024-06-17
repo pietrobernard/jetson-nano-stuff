@@ -46,6 +46,10 @@ This document describes how to create a bootable SD card image, update to Ubuntu
 + pyarrow 1.0.1
 + cudf 0.19.0
 
+<b>📝Notice📝</b>
+
+I suggest to use a 64 GB card since it will give you plenty of space to allocate a swap partition/swap file. During the compilation of some libraries, you're going to need at least 8 GB of swap in addition to the 1 GB that is already present by default. So, if you start with a 32 GB card, you will have to clone it to a 64 GB to do that compilation and then you can clone the 32 GB partition back again on the 32 GB card when the compilation finishes. The final system with all the packages installed will leave 4.8 GB free on a 32 GB card. If you're OK with that and you don't mind cloning back and forth during the procedure, go ahead with the 32 GB card, otherwise the 64 GB one is the better choice.
+
 ### 1) Intro - The board, drivers, CUDA and Ubuntu
 
 1. This board is centered around the Tegra X1 SoC that includes the processor (an early ARM v8 so unfortunately no SVE instructions, etc) and the GPU which is a nice 128 cores Maxwell device with compute capability 5.3. The GPU is technically an iGPU (integrated) and as such it is not a discrete device attached to the pci-e bus. This is a crucial point since the "discrete" nvidia drivers <b>won't work</b> with this gpu, even if the architecture is exactly the same to that of a discrete Maxwell gpu.
@@ -53,7 +57,7 @@ The only drivers that will work are those provided by nVidia in their "Linux 4 T
 
 2. The board also does not have a BIOS/EFI chip, but it uses a special partition on the SD card (more on this later on) in order to boot the device (other jetson nano's with different SoC have instead a flash chip where the bios/efi subsystem resides, this is not the case with the 2GB developer's version).
 
-3. With respect to the OS, nvidia officially supports only Ubuntu 18. While it is not necessary, it can be updated to Ubuntu 20.04 so as to obtain updated versions of some system libraries that are quite useful for a variety of tasks. The procedure to update the os is described later.
+3. With respect to the OS, nvidia officially supports only Ubuntu 18. While it is not strictly necessary, some libraries are not supported on 18. It can be updated to Ubuntu 20.04 so as to obtain updated versions of some system libraries that are quite useful for a variety of tasks. The procedure to update the os is described later.
 
 ### 2) Creating a bootable SD card and first boot
 #### 2.1) Using Nvidia's sdkmanager (requires user registration)
