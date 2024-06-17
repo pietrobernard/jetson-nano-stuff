@@ -719,4 +719,21 @@ it should display a message just like the one we had when importing `cudf`. Here
 
 #### 8.4) Installing the Dask-cuDF dashboard
 
+We need to install two packages: `Bokeh 2.2.3` and `jinja2 3.0.0` via conda:
+```bash
+conda install bokeh=2.2.3
+conda install jinja2=3.0.0
+```
+After you've done this, download from this repo the `distributed.zip` and `jtop.zip` archives. Unzip these archives and copy them over the `site-packages` folder of the python interpreter that is running in your env. In my case its gpudist so I have to copy them over to:
+```bash
+/home/jetson/miniforge3/envs/gpudist/lib/python3.9/site-packages/distributed-2021.4.0-py3.9.egg/
+/home/jetson/miniforge3/envs/gpudist/lib/python3.9/site-packages/jtop/
+```
+Overwrite all the files that you'll get prompted to. This will install my modifications of the dashboard so that you'll be able to check on the `GPU` (the default dashboard does not support Tegra devices...). The jtop modification simply adds a wrapper to a function in order to suppress some of its output.
+
+After you've done this, you can start a scheduler via `dask-scheduler` and a worker via `dask-worker`.
+
+#### 8.5) Remarks on Dask-cuda
+
+Dask-cuda is a package that is useful in applications where you have mutliple GPUs in the same node and you want to easily distribute work across them. This is not the Jetson's case but be forewarned that this package <b>cannot work</b> on a Tegra SoC due to the non-availability of the `nvidia-ml` library on this platform (only the stubs are present). This is again due to the peculiar nature of the SoC and the GPU being an iGPU. Nvidia simply doesn't ship the driver to do this.
 
