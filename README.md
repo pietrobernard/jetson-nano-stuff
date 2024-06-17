@@ -674,3 +674,5 @@ Since this is hardly the most up-to-date version of `cuDF`, some features are no
 
 ### 8) Dask
 
+We're going to need `dask 2021.4.0` and then we'll build the `dask_cudf` module.
+
