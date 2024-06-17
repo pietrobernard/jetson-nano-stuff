@@ -664,9 +664,9 @@ cdf = cf.from_pandas(df)
 The very last command should trigger the GPU and you'll see on jtop the GPU utilization spiking and the shared memory rising like so:
 <p align="center"><img src="jtop_screen.png"></p>
 
-<b>⚠️Warning⚠️</b>
+<b>⚠️Warning⚠️: interaction between cupy and cudf</b>
 
-Always import `cudf` as the first package. If you don't do this, for instance if you import first cupy and then cudf, the import will fail due to the fact that cupy initializes certain env properties that will wreak havoc with cudf. On the contrary, if you always import cudf first, everything will work. I've only found this behaviour with this older version so maybe it's a bug that has been solved in the future releases or it might be due to the unique nature of the Jetson's hardware.
+If you're using cudf and cupy at the same time, always import `cudf` as the first. If you don't do this, for instance if you import first cupy and then cudf, the import will fail due to the fact that cupy initializes certain env properties that will wreak havoc with cudf. On the contrary, if you always import cudf first, everything will work. I've only found this behaviour with this older version so maybe it's a bug that has been solved in the future releases or it might be due to the unique nature of the Jetson's hardware. Conversely, with other packages like numba, etc cudf doesn't care whether it is imported first or not.
 
 <b>📝Notice📝</b>
 
