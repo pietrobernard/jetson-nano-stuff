@@ -359,7 +359,7 @@ After that, configure with:
 ```bash
 mkdir install
 ./bootstrap.sh
-./configure CPPFLAGS="-I${BOOST_ROOT}" --with-boost=${BOOST_ROOT} --prefix=${PWD}/install
+./configure CPPFLAGS="-I${BOOST_ROOT}" CXXFLAGS="-fPIC" --with-boost=${BOOST_ROOT} --prefix=${PWD}/install
 make -j4
 sudo make install
 export THRIFT_ROOT=${PWD}/install
@@ -368,72 +368,63 @@ Now, edit the `versions.txt` file again and remove the line corresponding to `th
 
 Now, go back in the `cpp` folder and create a `build` dir, go inside that and type:
 ```bash
-cmake	-DCMAKE_INSTALL_PREFIX=${ARROW_HOME} \
-	-DCMAKE_CXX_FLAGS="-I${CONDA_PREFIX}/include" \
-	-DARROW_COMPUTE=ON \
-	-DARROW_CSV=ON \
-	-DARROW_CUDA=ON \
-	-DARROW_FILESYSTEM=ON \
-	-DARROW_ORC=ON \
-	-DARROW_PARQUET=ON \
-	-DARROW_PYTHON=ON \
-	-DARROW_DATASET=ON \
-	-DARROW_HDFS=ON \
-	-DARROW_JSON=ON \
-	-DARROW_BUILD_BENCHMARKS=OFF \
-	-DARROW_BUILD_EXAMPLES=OFF \
-	-DARROW_BUILD_TESTS=OFF \
-	-Dabsl_SOURCE=BUNDLED \
-	-DAWSSDK_SOURCE=BUNDLED \
-	-Dbenchmark_SOURCE=BUNDLED \
-	-DBoost_SOURCE=SYSTEM \
-	-DBrotli_SOURCE=BUNDLED \
-	-DBZip2_SOURCE=BUNDLED \
-	-Dc-ares_SOURCE=BUNDLED \
-	-Dgflags_SOURCE=BUNDLED \
-	-Dglog_SOURCE=BUNDLED \
-	-Dgoogle_cloud_cpp_storage_SOURCE=BUNDLED \
-	-DgRPC_SOURCE=BUNDLED \
-	-DGTest_SOURCE=BUNDLED \
-	-Djemalloc_SOURCE=BUNDLED \
-	-DLLVM_SOURCE=BUNDLED \
-	-DLz4_SOURCE=BUNDLED \
-	-Dnlohmann_json_SOURCE=BUNDLED \
-	-Dopentelemetry-cpp_SOURCE=BUNDLED \
-	-DORC_SOURCE=BUNDLED \
-	-Dre2_SOURCE=BUNDLED \
-	-DProtobuf_SOURCE=BUNDLED \
-	-DRapidJSON_SOURCE=BUNDLED \
-	-DSnappy_SOURCE=BUNDLED \
-	-DSubstrait_SOURCE=BUNDLED \
-	-DThrift_SOURCE=SYSTEM \
-	-Ducx_SOURCE=BUNDLED \
-	-Dutf8proc_SOURCE=BUNDLED \
-	-Dxsimd_SOURCE=BUNDLED \
-	-DZLIB_SOURCE=BUNDLED \
-	-DZSTD_SOURCE=BUNDLED \
-	-DBoost_ROOT=${BOOST_ROOT} \
-	-DThrift_ROOT=${THRIFT_ROOT} \
-	-DTHRIFT_STATIC_LIB=${THRIFT_ROOT}/lib \
+cmake   -DCMAKE_INSTALL_PREFIX=${ARROW_HOME} \
+        -DCMAKE_CXX_FLAGS="-I${CONDA_PREFIX}/include -fPIC" \
+        -DARROW_COMPUTE=ON \
+        -DARROW_CSV=ON \
+        -DARROW_CUDA=ON \
+        -DARROW_FILESYSTEM=ON \
+        -DARROW_ORC=ON \
+        -DARROW_PARQUET=ON \
+        -DARROW_PYTHON=ON \
+        -DARROW_DATASET=ON \
+        -DARROW_HDFS=ON \
+        -DARROW_JSON=ON \
+        -DARROW_BUILD_BENCHMARKS=OFF \
+        -DARROW_BUILD_EXAMPLES=OFF \
+        -DARROW_BUILD_TESTS=OFF \
+        -Dabsl_SOURCE=BUNDLED \
+        -DAWSSDK_SOURCE=BUNDLED \
+        -Dbenchmark_SOURCE=BUNDLED \
+        -DBoost_SOURCE=SYSTEM \
+        -DBrotli_SOURCE=BUNDLED \
+        -DBZip2_SOURCE=BUNDLED \
+        -Dc-ares_SOURCE=BUNDLED \
+        -Dgflags_SOURCE=BUNDLED \
+        -Dglog_SOURCE=BUNDLED \
+        -Dgoogle_cloud_cpp_storage_SOURCE=BUNDLED \
+        -DgRPC_SOURCE=BUNDLED \
+        -DGTest_SOURCE=BUNDLED \
+        -Djemalloc_SOURCE=BUNDLED \
+        -DLLVM_SOURCE=BUNDLED \
+        -DLz4_SOURCE=BUNDLED \
+        -Dnlohmann_json_SOURCE=BUNDLED \
+        -Dopentelemetry-cpp_SOURCE=BUNDLED \
+        -DORC_SOURCE=BUNDLED \
+        -Dre2_SOURCE=BUNDLED \
+        -DProtobuf_SOURCE=BUNDLED \
+        -DRapidJSON_SOURCE=BUNDLED \
+        -DSnappy_SOURCE=BUNDLED \
+        -DSubstrait_SOURCE=BUNDLED \
+        -DThrift_SOURCE=SYSTEM \
+        -Ducx_SOURCE=BUNDLED \
+        -Dutf8proc_SOURCE=BUNDLED \
+        -Dxsimd_SOURCE=BUNDLED \
+        -DZLIB_SOURCE=BUNDLED \
+        -DZSTD_SOURCE=BUNDLED \
+        -DBoost_ROOT=${BOOST_ROOT} \
+        -DThrift_ROOT=${THRIFT_ROOT} \
+        -DTHRIFT_STATIC_LIB=${THRIFT_ROOT}/lib/libthrift.a \
 	..
 ```
 cmake could produce some warning due to some variables not being used. Don't worry about them.
 
-Before going on and making arrow, go in the `src/parquet/CMakeFiles/parquet_shared.dir` folder. You'll see these files:
+Go now inside the `cpp/thirdparty/` and untar the `protobuf` tarball. Enter the folder and install the python module:
 ```bash
--rw-rw-r--  1 jetson jetson  729 Jun 15 11:27 DependInfo.cmake
--rw-rw-r--  1 jetson jetson 9994 Jun 15 11:27 build.make
--rw-rw-r--  1 jetson jetson  324 Jun 15 11:33 cmake_clean.cmake
--rw-rw-r--  1 jetson jetson   98 Jun 15 11:27 depend.make
--rw-rw-r--  1 jetson jetson 1593 Jun 15 11:27 flags.make
--rw-rw-r--  1 jetson jetson 2193 Jun 15 11:27 link.txt
--rw-rw-r--  1 jetson jetson   21 Jun 15 11:33 progress.make
+python setup.py build_ext --inplace
+python setup.py install
 ```
-Consider `build.make` and `link.txt`. Edit `build.make` and around line `149` you should see a line similar to this: 
-```cmake
-release/libparquet.so.100.1.0: ../thirdparty/thrift-0.12.0/install/lib
-```
-comment this line out or delete it altogether. Then open `link.txt` and go at the end of the line. Start to scan the line backwards until you come across `../../orc_ep-install/lib/liborc.a`. If you continue scanning backward a bit you'll see that you'll find something like the line you just commented in the other file. Delete that chunk and save the file.
+This will be useful for later.
 
 After that, proceed with the build:
 ```bash
@@ -449,6 +440,7 @@ After that, go in the `arrow/python` folder. Set this env vars:
 export PYARROW_WITH_CUDA=1
 export PYARROW_WITH_PARQUET=1
 export PYARROW_WITH_ORC=1
+export PYARROW_WITH_DATASET=1
 ```
 Install `cython` version `0.29`. This is very important since newer versions won't work.
 ```
