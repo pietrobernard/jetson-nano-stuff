@@ -662,9 +662,15 @@ df = pd.DataFrame(np.arange(10**5))
 cdf = cf.from_pandas(df)
 ```
 The very last command should trigger the GPU and you'll see on jtop the GPU utilization spiking and the shared memory rising like so:
+<p align="center"><img src="jtop_screen.png"></p>
 
+<b>⚠️Warning⚠️</b>
 
+Always import `cudf` as the first package. If you don't do this, for instance if you import first cupy and then cudf, the import will fail due to the fact that cupy initializes certain env properties that will wreak havoc with cudf. On the contrary, if you always import cudf first, everything will work. I've only found this behaviour with this older version so maybe it's a bug that has been solved in the future releases or it might be due to the unique nature of the Jetson's hardware.
 
+<b>📝Notice📝</b>
+
+Since this is hardly the most up-to-date version of `cuDF`, some features are not available (they actually throw out NotImplemented exceptions) so be careful when dealing with projects that require higher versions of this package. When possible, consider using `cupy` to balance out the missing features of cuDF (like for instance the Series. You can find the complete description in the [RAPIDS documentation](https://docs.rapids.ai/api/cudf/stable/user_guide/cupy-interop/).
 
 ### 8) Dask
 
