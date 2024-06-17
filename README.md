@@ -672,7 +672,29 @@ If you're using cudf and cupy at the same time, always import `cudf` as the firs
 
 Since this is hardly the most up-to-date version of `cuDF`, some features are not available (they actually throw out NotImplemented exceptions) so be careful when dealing with projects that require higher versions of this package. When possible, consider using `cupy` to balance out the missing features of cuDF (like for instance the Series. You can find the complete description in the [RAPIDS documentation](https://docs.rapids.ai/api/cudf/stable/user_guide/cupy-interop/).
 
-### 8) Dask
+### 8) Dask with `dask_cudf` package
+#### 8.1) Building dask itself
+We're going to need `dask 2021.04.0` and then we'll build the `dask_cudf` module. Go in the home dir and downloa dask:
+```bash
+git clone https://github.com/dask/dask.git
+cd dask
+git checkout 2021.04.0
+```
+and then proceed to build and install:
+```bash
+python setup.py build_ext --inplace
+python setup.py install
+```
 
-We're going to need `dask 2021.4.0` and then we'll build the `dask_cudf` module.
+#### 8.2) Building distributed
+
+Start by cloning the github repo:
+```bash
+git clone https://github.com/dask/distributed.git
+cd distributed
+git checkout 2021.04.0
+```
+Before building and installing this package, we need to firstly install `click` and `tornado`:
+```bash
+```
 
