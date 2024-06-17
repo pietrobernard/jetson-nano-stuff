@@ -672,9 +672,9 @@ If you're using cudf and cupy at the same time, always import `cudf` as the firs
 
 Since this is hardly the most up-to-date version of `cuDF`, some features are not available (they actually throw out NotImplemented exceptions) so be careful when dealing with projects that require higher versions of this package. When possible, consider using `cupy` to balance out the missing features of cuDF (like for instance the Series. You can find the complete description in the [RAPIDS documentation](https://docs.rapids.ai/api/cudf/stable/user_guide/cupy-interop/).
 
-### 8) Dask with `dask_cudf` package
+### 8) Dask with Dask-cuDF package
 #### 8.1) Building dask itself
-We're going to need `dask 2021.04.0` and then we'll build the `dask_cudf` module. Go in the home dir and downloa dask:
+We're going to need `dask 2021.04.0` and then we'll build the `Dask-cuDF` module. Go in the home dir and downloa dask:
 ```bash
 git clone https://github.com/dask/dask.git
 cd dask
@@ -694,7 +694,29 @@ git clone https://github.com/dask/distributed.git
 cd distributed
 git checkout 2021.04.0
 ```
-Before building and installing this package, we need to firstly install `click` and `tornado`:
+Before building and installing this package, we need to firstly install `click 7.1.2` (versions higher than this will cause fails) and `tornado 6.4`:
 ```bash
+conda install click=7.1.2
+conda install tornado=6.4
 ```
+Now, the system is ready to build distributed:
+```bash
+python setup.py build_ext --inplace
+python setup.py install
+```
+
+#### 8.3) Building Dask-cuDF
+Go back to `${CUDF_HOME}/python/Dask-cuDF` folder and:
+```bash
+python setup.py build_ext --inplace
+python setup.py isntall
+```
+Go now in the home directory and open a python terminal. Try:
+```python
+import Dask-cuDF
+```
+it should display a message just like the one we had when importing `cudf`. Here you can find (RAPIDS 10 minutes guide to `cuDF` and `Dask-cuDF`)[https://docs.rapids.ai/api/cudf/stable/user_guide/10min/]. As it was said before, notice that some of these examples do not work because at the time these versions were released, some features were still under development and will throw `NotImplemented` errors.
+
+#### 8.4) Installing the Dask-cuDF dashboard
+
 
