@@ -1,3 +1,8 @@
+########################################################################################
+## To run this script make sure you are inside your 'gpudist' conda environment
+## This script runs on the scheduler so the address is just 127.0.0.1
+## If you're running it from another machine, change that to the proper address.
+########################################################################################
 import dask_cudf
 import cudf
 import numpy as np
