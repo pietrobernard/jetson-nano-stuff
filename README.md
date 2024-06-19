@@ -687,7 +687,7 @@ Since this is hardly the most up-to-date version of `cuDF`, some features are no
 
 ### 8) Dask with Dask-cuDF package
 
-As dask's (official docs)[https://docs.dask.org/en/stable/gpu.html] say, GPU support is orthogonal to dask. When work is distributed across the nodes, dask calls the function/methods that have been inputted by the user. If these functions/methods are built to use GPUs, they will trigger the GPU. So, for instance, if in a computation you substitute numpy arrays with cupy ones, the GPU will be triggered. Same goes if you use cudf's DataFrames instead of pandas' ones. The `Dask-cudf` package takes it a step further and allows to 'easily' bridge between the two worlds.
+As dask's [official docs](https://docs.dask.org/en/stable/gpu.html) say, GPU support is orthogonal to dask. When work is distributed across the nodes, dask calls the function/methods that have been inputted by the user. If these functions/methods are built to use GPUs, they will trigger the GPU. So, for instance, if in a computation you substitute numpy arrays with cupy ones, the GPU will be triggered. Same goes if you use cudf's DataFrames instead of pandas' ones. The `Dask-cudf` package takes it a step further and allows to 'easily' bridge between the two worlds.
 
 #### 8.1) Building dask itself
 We're going to need `dask 2021.04.0` and then we'll build the `Dask-cuDF` module. Go in the home dir and download dask:
@@ -731,7 +731,7 @@ Go now in the home directory and open a python terminal. Try:
 ```python
 import dask_cudf
 ```
-it should display a message just like the one we had when importing `cudf`. Here you can find (RAPIDS 10 minutes guide to `cuDF` and `Dask-cuDF`)[https://docs.rapids.ai/api/cudf/stable/user_guide/10min/]. As it was said before, notice that some of these examples do not work because at the time these versions were released, some features were still under development and will throw `NotImplemented` errors.
+it should display a message just like the one we had when importing `cudf`. Here you can find [RAPIDS 10 minutes guide to `cuDF` and `Dask-cuDF`](https://docs.rapids.ai/api/cudf/stable/user_guide/10min/). As it was said before, notice that some of these examples do not work because at the time these versions were released, some features were still under development and will throw `NotImplemented` errors.
 
 #### 8.4) Installing the Dask-cuDF dashboard
 
@@ -751,7 +751,7 @@ After you've done this, you are ready to start a scheduler via the `dask-schedul
 ```bash
 dask-worker tcp://jetson:8786 --name jetson-worker-1
 ```
-Some test scripts are provided in the `tests` folder and (they have been written based on this article)[https://www.kaggle.com/code/beniel/03-introduction-to-dask-and-dask-cudf]. Below is an example of the GPU app when using an Nvidia c++ program to test the device (it involved some linear algebra calculations):
+Some test scripts are provided in the `tests` folder and [they have been written based on this article](https://www.kaggle.com/code/beniel/03-introduction-to-dask-and-dask-cudf). Below is an example of the GPU app when using an Nvidia c++ program to test the device (it involved some linear algebra calculations):
 <p align="center">
 	<img src="img/dashb.gif">
 </p>
