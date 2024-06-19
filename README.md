@@ -744,7 +744,7 @@ dask-worker tcp://jetson:8786 --name jetson-worker-1
 ```
 If you run one of the test scripts contained in the folder `tests` (they have been written based on this article)[https://www.kaggle.com/code/beniel/03-introduction-to-dask-and-dask-cudf] and open up the scheduler's dashboard at address [http://jetson:8787] you'll see the GPU app will look like this:
 <p align="center">
-	<img src="dashb.gif">
+	<img src="img/dashb.gif">
 </p>
 The app will show each the GPUs available on the cluster. The first plot shows the GPU core frequencies (absolute), the second the GPU utilization (percentage) and the third the GPU memory usage (absolute). The y-axis label is like `idx:X_worker:Y` where `idx` is the unique index of the GPU and `worker` is the unique index of the worker that GPU belongs to. In this way you always know who's doing what.
 
