@@ -677,6 +677,9 @@ If you're using cudf and cupy at the same time, always import `cudf` as the firs
 Since this is hardly the most up-to-date version of `cuDF`, some features are not available (they actually throw out NotImplemented exceptions) so be careful when dealing with projects that require higher versions of this package. When possible, consider using `cupy` to balance out the missing features of cuDF (like for instance the Series. You can find the complete description in the [RAPIDS documentation](https://docs.rapids.ai/api/cudf/stable/user_guide/cupy-interop/).
 
 ### 8) Dask with Dask-cuDF package
+
+As dask's (official docs)[https://docs.dask.org/en/stable/gpu.html] say, GPU support is orthogonal to dask. When work is distributed across the nodes, dask calls the function/methods that have been inputted by the user. If these functions/methods are built to use GPUs, they will trigger the GPU. So, for instance, if in a computation you substitute numpy arrays with cupy ones, the GPU will be triggered. Same goes if you use cudf's DataFrames instead of pandas' ones. The `Dask-cudf` package takes it a step further and allows to 'easily' bridge between the two worlds.
+
 #### 8.1) Building dask itself
 We're going to need `dask 2021.04.0` and then we'll build the `Dask-cuDF` module. Go in the home dir and downloa dask:
 ```bash
@@ -717,7 +720,7 @@ python setup.py isntall
 ```
 Go now in the home directory and open a python terminal. Try:
 ```python
-import Dask-cuDF
+import dask_cudf
 ```
 it should display a message just like the one we had when importing `cudf`. Here you can find (RAPIDS 10 minutes guide to `cuDF` and `Dask-cuDF`)[https://docs.rapids.ai/api/cudf/stable/user_guide/10min/]. As it was said before, notice that some of these examples do not work because at the time these versions were released, some features were still under development and will throw `NotImplemented` errors.
 
@@ -735,9 +738,16 @@ After you've done this, download from this repo the `distributed.zip` and `jtop.
 ```
 Overwrite all the files that you'll get prompted to. This will install my modifications of the dashboard so that you'll be able to check on the `GPU` (the default dashboard does not support Tegra devices...). The jtop modification simply adds a wrapper to a function in order to suppress some of its output.
 
-After you've done this, you can start a scheduler via `dask-scheduler` and a worker via `dask-worker`.
+After you've done this, you are ready to start a scheduler via the `dask-scheduler` command and workers via `dask-worker`. For instance in my setup I have 4 jetson nanos: one acts as the scheduler and three as workers. The scheduler is started on machine host `jetson` while the workers in `jetson-worker-1`, `jetson-worker-2` and `jetson-worker-3`. For instance in the case of the `jetson-worker-1`:
+```bash
+dask-worker tcp://jetson:8786 --name jetson-worker-1
+```
+If you run one of the test scripts contained in the folder `tests` (they have been written based on this article)[https://www.kaggle.com/code/beniel/03-introduction-to-dask-and-dask-cudf] and open up the scheduler's dashboard at address [http://jetson:8787] you'll see the GPU app will look like this:
+<p align="center">
+	<img src="dashb.gif">
+</p>
+The app will show each the GPUs available on the cluster. The first plot shows the GPU core frequencies (absolute), the second the GPU utilization (percentage) and the third the GPU memory usage (absolute). The y-axis label is like `idx:X_worker:Y` where `idx` is the unique index of the GPU and `worker` is the unique index of the worker that GPU belongs to. In this way you always know who's doing what.
 
 #### 8.5) Remarks on Dask-cuda
 
-Dask-cuda is a package that is useful in applications where you have mutliple GPUs in the same node and you want to easily distribute work across them. This is not the Jetson's case but be forewarned that this package <b>cannot work</b> on a Tegra SoC due to the non-availability of the `nvidia-ml` library on this platform (only the stubs are present). This is again due to the peculiar nature of the SoC and the GPU being an iGPU. Nvidia simply doesn't ship the driver to do this.
-
+In theory, there could be more than one GPU per worker node. This is not the case of the Nano of course but in general it can be true. In order to exploit multi GPUs nodes better, dask ships the `dask-cuda` package to easily distribute work across multiple GPUs on the same node and across the other nodes. This package works also with just one GPU but <b>it doesn't work on the Jetson Nano platform</b>. This is, as it happened before, due to the unique nature of the Tegra SoC. The package is in fact built upon `libnvidia-ml` library which is <b>not</b> supported on this platform.
