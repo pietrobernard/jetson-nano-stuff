@@ -666,7 +666,7 @@ df = pd.DataFrame(np.arange(10**5))
 cdf = cf.from_pandas(df)
 ```
 The very last command should trigger the GPU and you'll see on jtop the GPU utilization spiking and the shared memory rising like so:
-<p align="center"><img src="jtop_screen.png"></p>
+<p align="center"><img src="img/jtop_screen.png"></p>
 
 <b>⚠️Warning⚠️: interaction between cupy and cudf</b>
 
