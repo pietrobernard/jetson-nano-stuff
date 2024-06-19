@@ -33,7 +33,7 @@ Here are the details of the board.
 			</table>
 		</td>
 		<td>
-			<img src="JN_02_KTZ.png">
+			<img src="img/jetson_nano.png">
 		</td>
 	</tr>
 </table>
