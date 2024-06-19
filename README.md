@@ -751,7 +751,7 @@ After you've done this, you are ready to start a scheduler via the `dask-schedul
 ```bash
 dask-worker tcp://jetson:8786 --name jetson-worker-1
 ```
-If you run one of the test scripts contained in the folder `tests` (they have been written based on this article)[https://www.kaggle.com/code/beniel/03-introduction-to-dask-and-dask-cudf] and open up the scheduler's dashboard at address [http://jetson:8787] you'll see the GPU app will look like this:
+Some test scripts are provided in the `tests` folder and (they have been written based on this article)[https://www.kaggle.com/code/beniel/03-introduction-to-dask-and-dask-cudf]. Below is an example of the GPU app when using an Nvidia c++ program to test the device (it involved some linear algebra calculations):
 <p align="center">
 	<img src="img/dashb.gif">
 </p>
