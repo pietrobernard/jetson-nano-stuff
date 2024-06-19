@@ -40,11 +40,12 @@ Here are the details of the board.
 
 Official docs are available [here](https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-2gb-devkit).
 
-This document describes how to create a bootable SD card image, update to Ubuntu 20.04 and install some libraries to exploit gpgpu computing both in python (e.g. numba, cupy, cudf) and c++ tool (nvcc, ecc). Also, directions to use distributed computing tools (dask, kafka) will be given. Specifically:
+This document describes how to create a bootable SD card image, update to Ubuntu 20.04 and install some libraries to exploit gpgpu computing both in python (e.g. numba, cupy, cudf), c++ (nvcc, ecc) and distributed computing tools (dask). Specifically:
 + numba 0.56.4
 + cupy 12.3.0
 + pyarrow 1.0.1
 + cudf 0.19.0
++ dask 2021.04.0
 
 <b>📝Notice📝</b>
 
@@ -62,7 +63,7 @@ The only drivers that will work are those provided by nVidia in their "Linux 4 T
 ### 2) Creating a bootable SD card and first boot
 #### 2.1) Using Nvidia's sdkmanager (requires user registration)
 
-The easiest way to do this is to set up a virtual machine (e.g. VMware) with Ubuntu 18. Once you have it up and running, install the `sdkmanager` by Nvidia. While this wouldn't be necessary, since you can also download all that is needed to build the sd-card image from Nvidia website, it is highly recommended because the sdkmanager will download some additional dependencies that will prevent the system from breaking when updating from Ubuntu 18 to Ubuntu 20.04. After you've installed sdkmanager, run it choosing the correct board and JetPack version (`4.6.4`). You can check only the `Jetson OS` options and uncheck the others. This will build the image, but we'll need to modify some things about it manually. When prompted to flash the device, hit `Skip`.
+The easiest way to do this is to set up a virtual machine (e.g. VMware) with Ubuntu 18. Once you have it up and running, install the `sdkmanager` by Nvidia. After you've installed sdkmanager, run it choosing the correct board and JetPack version (`4.6.4`). You can check only the `Jetson OS` options and uncheck the others. This will build the image, but we'll need to modify some things about it manually. When prompted to flash the device, hit `Skip`.
 
 Open a terminal inside Nvidia's sdk folder and look for the `Linux_for_Tegra` folder. Once there, go inside `tools` and run these scripts:
 1. Create a user:
@@ -76,7 +77,7 @@ Open a terminal inside Nvidia's sdk folder and look for the `Linux_for_Tegra` fo
 Once you've done this, you can use a tool like `balena etcher` to write `sd-blob.img` to SD card:
 1. <b>Before you flash the card</b>: do a low level format, without partitioning (easy via tools like `Disks` on Ubuntu). This is absolutely mandatory otherwise the system won't boot correctly.
 2. Flash the image on the card.
-3. Place the card in the Jetson and power it up. The first boot will show some errors, ignore them. It will reboot automatically.
+3. Place the card in the Jetson and power it up.
 
 #### 2.2) Manual download of components (no user registration required)
 
@@ -109,9 +110,11 @@ Once you've done this, you can use a tool like `balena etcher` to write `sd-blob
    -o : output file (must end with .img extension)
    -b : must be exactly jetson-nano-2gb-devkit
    ```
-After this, you can place the card in the jetson and boot.
+After this, you can flash the image on the card, place it in the jetson and boot.
 
 ### 3) Prepare system for update
+
+The first boot will show some errors, ignore them. The board will reboot automatically.
 
 First thing to do, as usual:
 ```bash
@@ -318,7 +321,7 @@ git clone https://github.com/apache/arrow.git
 cd arrow
 git checkout apache-arrow-1.0.1
 ```
-Go inside the `arrow` folder, and create the `dist` folder. Edit the `.bashrc` file and add, assuming arrow is in $HOME:
+Edit the `.bashrc` file and add, assuming arrow is in $HOME:
 ```bash
 export ARROW_HOME=${HOME}/arrow/cpp
 export LD_LIBRARY_PATH=${HOME}/arrow/cpp/lib:$LD_LIBRARY_PATH
@@ -331,7 +334,7 @@ We need boost version 1.71.0 which can be downloaded directly:
 ```bash
 wget https://archives.boost.io/release/1.71.0/source/boost_1_71_0.tar.gz
 ```
-go inside `boost_1_71_0` folder and run the bootstrap script:
+go inside `boost_1_71_0` folder and run the following:
 ```bash
 mkdir install
 ./bootstrap.sh --prefix=${PWD}/install --exec-prefix=${PWD}/install
@@ -340,7 +343,7 @@ this will build the `b2` program. Start the build via:
 ```bash
 ./b2 -j4
 ```
-at this point, assuming you've got the boost libs in `$HOME/boost_1_71_0`, you'll have the include path in `$HOME/boost_1_71_0` (folder `boost`) and the lib path in `$HOME/boost_1_71_0/stage/lib`. We can thus add to the bashrc the following lines:
+at this point, assuming you've got the boost libs in `$HOME/boost_1_71_0`, you'll have the include path in `$HOME/boost_1_71_0` (folder `boost`) and the lib path in `$HOME/boost_1_71_0/stage/lib`. We can thus add to the .bashrc the following lines:
 ```bash
 export LD_LIBRARY_PATH=/path/to/boost/boost_1_71_0/stage/lib:$LD_LIBRARY_PATH
 export BOOST_ROOT=/path/to/boost/boost_1_71_0
@@ -431,7 +434,7 @@ cmake   -DCMAKE_INSTALL_PREFIX=${ARROW_HOME} \
 ```
 cmake could produce some warning due to some variables not being used. Don't worry about them.
 
-Go now inside the `cpp/thirdparty/` and untar the `protobuf` tarball. Enter the folder and install the python module:
+Before you go ahead with the building, go inside the `cpp/thirdparty/` and untar the `protobuf` tarball. Enter the folder and install the python module:
 ```bash
 python setup.py build_ext --inplace
 python setup.py install
@@ -511,7 +514,7 @@ cmake -DCMAKE_INSTALL_PREFIX=${PWD}/../install ..
 make -j4
 make install
 ```
-Then, export this var:
+Then, export this var and also write this inside the `.bashrc` file:
 ```bash
 export DLPACK_ROOT=/your/path/to/dlpack
 ```
@@ -533,10 +536,13 @@ cmake -DCMAKE_INSTALL_PREFIX=${PWD}/../install -DCMAKE_CUDA_ARCHITECTURES="" ..
 make -j4
 make install
 cd ..
+```
+Then export and write this in the `.bashrc` file:
+```bash
 export RMM_ROOT=${PWD}
 export LD_LIBRARY_PATH=${PWD}/install/lib:$LD_LIBRARY_PATH
 ```
-Then, install also the python module. Go in the `rmm/python` folder. The `setup.py` file needs a little editing since, as you may expect, CUDA for the Tegra SoC is a little different.
+Install also the python module. Go in the `rmm/python` folder. The `setup.py` file needs a little editing since, as you may expect, CUDA for the Tegra SoC is a little different.
 
 + go at line 56 and add below the following:
   ```python
@@ -566,9 +572,9 @@ python setup.py install
 
 <b>⚠️Warning⚠️</b>
 
-In order to build cuDF you're going to need a 10 GB swap file/partition. If you are using a 32 GB card, there won't be enough space at this point. So, clone the card onto a 64 GB one and create a swap partition in the 32 GB unallocated space and then put the 64 GB card in the board. At this point you can build cuDF. When you're done building cuDF, clone the 32 GB partition back on the old 32 GB card.
+In order to build cuDF you're going to need a 8 GB swap file/partition. If you are using a 32 GB card, there won't be enough space at this point. So, clone the card onto a 64 GB one and create a swap partition in the 32 GB unallocated space and then put the 64 GB card in the board. At this point you can build cuDF. When you're done building cuDF, clone the 32 GB partition back on the old 32 GB card.
 
-Export this variable:
+Export this variable and also write it to the `.bashrc` file:
 ```bash
 export CUDF_HOME=/your/path/to/cudf/download
 ```
@@ -589,14 +595,17 @@ cmake	-DMAKE_INSTALL_PREFIX=${PWD}/../install \
 	..
 make -j1
 sudo make install
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH/usr/local/lib:
-sudo ldconfig
 ```
-The build will take approximately 18 hours on a class 10, A1, microSDXC UHS-I card (rated at a nominal speed of 140 MB/s). After this is completed we can proceed to build the python modules.
+The build will take approximately 18 hours on a class 10, A1, microSDXC UHS-I card (rated at a nominal speed of 140 MB/s).
 
-Export the following variable:
+When the build completes, export the following variable and edit again the `.bashrc` file and write these lines:
 ```bash
 export CUDF_ROOT=${CUDF_HOME}/cpp/build
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH/usr/local/lib:
+```
+Finally, as sudo:
+```bash
+sudo ldconfig
 ```
 
 Go inside `${CUDF_HOME}/python/cudf` and edit the `setup.py` file in the following manner. Consider the code block from line 165 (it starts with `extensions = [`) up to line 199 (it ends with `]`). Add the lines that are marked below between the comments. Of course you should input the path that corresponds to your installation. If you've followed exactly what I've done before, then you can copy and paste the code below:
@@ -670,18 +679,18 @@ The very last command should trigger the GPU and you'll see on jtop the GPU util
 
 <b>⚠️Warning⚠️: interaction between cupy and cudf</b>
 
-If you're using cudf and cupy at the same time, always import `cudf` as the first. If you don't do this, for instance if you import first cupy and then cudf, the import will fail due to the fact that cupy initializes certain env properties that will wreak havoc with cudf. On the contrary, if you always import cudf first, everything will work. I've only found this behaviour with this older version so maybe it's a bug that has been solved in the future releases or it might be due to the unique nature of the Jetson's hardware. Conversely, with other packages like numba, etc cudf doesn't care whether it is imported first or not.
+If you're using cudf and cupy at the same time, always import `cudf` as the first. If you don't do this, for instance if you import first cupy and then cudf, the import will fail due to the fact that cupy initializes certain env and iGPU device properties that will wreak havoc with cudf. On the contrary, if you always import cudf (or Dask-cudf) first, everything will work. I've only found this behaviour with this older version so maybe it's a bug that has been solved in the future releases or it might be due to the unique nature of the Jetson's hardware. Conversely, with other packages like numba, etc cudf doesn't care whether it is imported first or not.
 
 <b>📝Notice📝</b>
 
-Since this is hardly the most up-to-date version of `cuDF`, some features are not available (they actually throw out NotImplemented exceptions) so be careful when dealing with projects that require higher versions of this package. When possible, consider using `cupy` to balance out the missing features of cuDF (like for instance the Series. You can find the complete description in the [RAPIDS documentation](https://docs.rapids.ai/api/cudf/stable/user_guide/cupy-interop/).
+Since this is hardly the most up-to-date version of `cuDF`, some features are not available (they actually throw out NotImplemented exceptions) so be careful when dealing with projects that require higher versions of this package. You can find the complete description in the [RAPIDS documentation](https://docs.rapids.ai/api/cudf/stable/user_guide/cupy-interop/).
 
 ### 8) Dask with Dask-cuDF package
 
 As dask's (official docs)[https://docs.dask.org/en/stable/gpu.html] say, GPU support is orthogonal to dask. When work is distributed across the nodes, dask calls the function/methods that have been inputted by the user. If these functions/methods are built to use GPUs, they will trigger the GPU. So, for instance, if in a computation you substitute numpy arrays with cupy ones, the GPU will be triggered. Same goes if you use cudf's DataFrames instead of pandas' ones. The `Dask-cudf` package takes it a step further and allows to 'easily' bridge between the two worlds.
 
 #### 8.1) Building dask itself
-We're going to need `dask 2021.04.0` and then we'll build the `Dask-cuDF` module. Go in the home dir and downloa dask:
+We're going to need `dask 2021.04.0` and then we'll build the `Dask-cuDF` module. Go in the home dir and download dask:
 ```bash
 git clone https://github.com/dask/dask.git
 cd dask
@@ -706,7 +715,7 @@ Before building and installing this package, we need to firstly install `click 7
 conda install click=7.1.2
 conda install tornado=6.4
 ```
-Now, the system is ready to build distributed:
+It is OK if conda installs tornado 6.4.1. Now, the system is ready to build distributed:
 ```bash
 python setup.py build_ext --inplace
 python setup.py install
@@ -726,7 +735,7 @@ it should display a message just like the one we had when importing `cudf`. Here
 
 #### 8.4) Installing the Dask-cuDF dashboard
 
-We need to install two packages: `Bokeh 2.2.3` and `jinja2 3.0.0` via conda:
+We need to install two packages: `Bokeh 2.2.3` and `jinja2 3.0.0` (it must be exactly 3.0.0 otherwise it will fail) via conda:
 ```bash
 conda install bokeh=2.2.3
 conda install jinja2=3.0.0
