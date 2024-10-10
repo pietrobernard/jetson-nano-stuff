@@ -56,7 +56,7 @@ I suggest to use a 64 GB card since it will give you plenty of space to allocate
 1. This board is centered around the Tegra X1 SoC that includes the processor (an early ARM v8 so unfortunately no SVE instructions, etc) and the GPU which is a nice 128 cores Maxwell device with compute capability 5.3. The GPU is technically an iGPU (integrated) and as such it is not a discrete device attached to the pci-e bus. This is a crucial point since the "discrete" nvidia drivers <b>won't work</b> with this gpu, even if the architecture is exactly the same to that of a discrete Maxwell gpu.
 The only drivers that will work are those provided by nVidia in their "Linux 4 Tegra" (<b>L4T</b>) flavour of the Linux kernel. Since the driver version and the CUDA version must exactly match, no CUDA greater than 10.2 is supported on these devices. While the Maxwell architecture can run much higher CUDA versions, because of the gpu being integrated and the drivers being built-in in the L4T kernel, unless nvidia releases a new kernel with updated drivers, it is not possible to run CUDA beyond 10.2 (if one attempts to use a version > 10.2, the iGPU will fail to initialize and will result in random crashes, effectively breaking the system).
 
-2. The board also does not have a BIOS/EFI chip, but it uses a special partition on the SD card (more on this later on) in order to boot the device (other jetson nano's with different SoC have instead a flash chip where the bios/efi subsystem resides, this is not the case with the 2GB developer's version).
+2. The board also does not have a BIOS/EFI chip, but it uses a special partition on the SD card (more on this later on) in order to boot the device (other jetson nano's with different SoC have instead a flash chip where the bios/efi subsystem resides, this is not the case with the 2GB developer's version). The board does however have a tiny EEPROM memory, attached to the internal i2c bus. This EEPROM is not usable by the user, but it is written by the flashing utility with initial configuration values that the SoC uses in order to setup itself and start the boot. <i>Sometimes this EEPROM is bad and needs to be re-flashed, more on this later</i>.
 
 3. With respect to the OS, nvidia officially supports only Ubuntu 18. While it is not strictly necessary, some libraries are not supported on 18. It can be updated to Ubuntu 20.04 so as to obtain updated versions of some system libraries that are quite useful for a variety of tasks. The procedure to update the os is described later.
 
@@ -78,6 +78,19 @@ Once you've done this, you can use a tool like `balena etcher` to write `sd-blob
 1. <b>Before you flash the card</b>: do a low level format, without partitioning (easy via tools like `Disks` on Ubuntu). This is absolutely mandatory otherwise the system won't boot correctly.
 2. Flash the image on the card.
 3. Place the card in the Jetson and power it up.
+
+<hr>
+
+<b>Note</b>: if you see that the board does not boot, i.e. it stays locked up displaying only the splash screen with the Nvidia logo, the onboard EEPROM might be corrupted or incorrectly configured. To resolve this issue, you'll need to place the board in recovery mode and proceed as follows:
+
+1. Completely power off the board and with a jumper cable short the "forced recovery" pin to ground.
+2. Connect the micro-usb port of the board to your pc.
+3. On your pc, start the virtual machine you configured above and start the sdkmanager.
+4. Connect the power supply to the board and when the board is detected, attach it to your virtual machine.
+5. Open a terminal and navigate inside the "Linux_for_Tegra" folder and run, as sudo, the script "nvsdkmanager_flash.sh" without arguments. The script will attempt to connect to the board and flash it. If the script hangs at the beginning, power down the board and then power it up again. Reattach it to the VM and re-launch the script, it will work.
+6. Wait for the script to finish. Once it does, the script will also write the system partitions on the SD card. At this point you'll be free to re-flash the SD card as outline above since the EEPROM configuration is independent of the SD card's contents.
+
+<hr>
 
 #### 2.2) Manual download of components (no user registration required)
 
